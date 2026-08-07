@@ -479,11 +479,7 @@ function overwriteProxyGroups(params) {
     
     // 国内代理池节点（按中国省份 / 运营商关键词筛选）
     const chinaKeywords = "中国|国内|电信|联通|移动|铁通|广电|教育网|黑龙江|吉林|辽宁|北京|天津|内蒙古|新疆|甘肃|宁夏|青海|陕西|山西|河北|河南|山东|江苏|上海|浙江|安徽|福建|江西|湖北|湖南|广东|广西|海南|四川|贵州|云南|重庆|西藏|内蒙";
-    const chinaProxyRegex = new RegExp(`(?:${chinaKeywords})`, "i");
-    const chinaProxies = params["proxies"].filter((e) => chinaProxyRegex.test(e.name)).map((e) => e.name);
-    
-    // 国外代理池节点（国内节点之外的全部节点）
-    const foreignProxies = params["proxies"].filter((e) => !chinaProxyRegex.test(e.name)).map((e) => e.name);
+    const chinaProxies = getProxiesByRegex(params, new RegExp(`^(?=.*${chinaKeywords})(?!.*${excludeTerms}).*$`, "i"));
 
     // 包含条件：国外各个国家或地区的关键词
     const includeTerms = {
@@ -497,8 +493,10 @@ function overwriteProxyGroups(params) {
         FR: "(法国|FR|France|🇫🇷)",
         DE: "(德国|DE|Germany|🇩🇪)"
     };
-    // 合并国外所有国家关键词，供"其它"条件使用
+    // 合并国外所有国家关键词
     const foreignCountryTerms = Object.values(includeTerms).join("|");
+    // 国外代理池节点（国内节点之外的全部节点）
+    const foreignProxies = getProxiesByRegex(params, new RegExp(`^(?=.*${foreignCountryTerms})(?!.*${excludeTerms}).*$`, "i"));
     // 自动代理组正则表达式配置
     const autoProxyGroupRegexs = [
         { name: "HK - 自动选择", regex: new RegExp(`^(?=.*${includeTerms.HK})(?!.*${excludeTerms}).*$`, "i") },
@@ -509,11 +507,7 @@ function overwriteProxyGroups(params) {
         { name: "US - 自动选择", regex: new RegExp(`^(?=.*${includeTerms.US})(?!.*${excludeTerms}).*$`, "i") },
         { name: "UK - 自动选择", regex: new RegExp(`^(?=.*${includeTerms.UK})(?!.*${excludeTerms}).*$`, "i") },
         { name: "FR - 自动选择", regex: new RegExp(`^(?=.*${includeTerms.FR})(?!.*${excludeTerms}).*$`, "i") },
-        { name: "DE - 自动选择", regex: new RegExp(`^(?=.*${includeTerms.DE})(?!.*${excludeTerms}).*$`, "i") },
-        {
-            name: "其它 - 自动选择",
-            regex: new RegExp(`^(?!.*(?:${foreignCountryTerms}|${excludeTerms})).*$`, "i")
-        }
+        { name: "DE - 自动选择", regex: new RegExp(`^(?=.*${includeTerms.DE})(?!.*${excludeTerms}).*$`, "i") }
     ];
 
     const autoProxyGroups = autoProxyGroupRegexs
@@ -594,7 +588,7 @@ function overwriteProxyGroups(params) {
         {
             name: "✈️ 电报信息",
             type: "select",
-            proxies: ["🎯 节点选择", "HK - 自动选择", "JP - 自动选择", "KR - 自动选择", "SG - 自动选择", "US - 自动选择", "UK - 自动选择", "FR - 自动选择", "DE - 自动选择", "TW - 自动选择", "其它 - 自动选择"],
+            proxies: ["🎯 节点选择", "HK - 自动选择", "JP - 自动选择", "KR - 自动选择", "SG - 自动选择", "US - 自动选择", "UK - 自动选择", "FR - 自动选择", "DE - 自动选择", "TW - 自动选择"],
             // "include-all": true,
             icon: "https://raw.githubusercontent.com/Orz-3/mini/master/Color/Telegram.png"
         },
@@ -602,7 +596,7 @@ function overwriteProxyGroups(params) {
         {
             name: "🤖 AIGC",
             type: "select",
-            proxies: ["US - 自动选择", "🎯 节点选择", "HK - 自动选择", "JP - 自动选择", "KR - 自动选择", "SG - 自动选择", "UK - 自动选择", "FR - 自动选择", "DE - 自动选择", "TW - 自动选择", "其它 - 自动选择"],
+            proxies: ["US - 自动选择", "🎯 节点选择", "HK - 自动选择", "JP - 自动选择", "KR - 自动选择", "SG - 自动选择", "UK - 自动选择", "FR - 自动选择", "DE - 自动选择", "TW - 自动选择"],
             // "include-all": true,
             icon: "https://raw.githubusercontent.com/Orz-3/mini/master/Color/OpenAI.png"
         },
@@ -610,7 +604,7 @@ function overwriteProxyGroups(params) {
         {
             name: "🍎 苹果服务",
             type: "select",
-            proxies: ["DIRECT", "🎯 节点选择", "HK - 自动选择", "JP - 自动选择", "KR - 自动选择", "SG - 自动选择", "US - 自动选择", "UK - 自动选择", "FR - 自动选择", "DE - 自动选择", "TW - 自动选择", "其它 - 自动选择"],
+            proxies: ["DIRECT", "🎯 节点选择", "HK - 自动选择", "JP - 自动选择", "KR - 自动选择", "SG - 自动选择", "US - 自动选择", "UK - 自动选择", "FR - 自动选择", "DE - 自动选择", "TW - 自动选择"],
             // "include-all": true,
             icon: "https://raw.githubusercontent.com/Orz-3/mini/master/Color/Apple.png"
         },
@@ -618,7 +612,7 @@ function overwriteProxyGroups(params) {
         {
             name: "Ⓜ️ 微软服务",
             type: "select",
-            proxies: ["DIRECT", "🎯 节点选择", "HK - 自动选择", "JP - 自动选择", "KR - 自动选择", "SG - 自动选择", "US - 自动选择", "UK - 自动选择", "FR - 自动选择", "DE - 自动选择", "TW - 自动选择", "其它 - 自动选择"],
+            proxies: ["DIRECT", "🎯 节点选择", "HK - 自动选择", "JP - 自动选择", "KR - 自动选择", "SG - 自动选择", "US - 自动选择", "UK - 自动选择", "FR - 自动选择", "DE - 自动选择", "TW - 自动选择"],
             // "include-all": true,
             icon: "https://raw.githubusercontent.com/Orz-3/mini/master/Color/Microsoft.png"
         },
