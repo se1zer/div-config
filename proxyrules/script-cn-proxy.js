@@ -529,7 +529,7 @@ function overwriteProxyGroups(params) {
     const groups = [
         // 主入口
         {
-            name: "🎯 节点选择",
+            name: "🌍 国外代理",
             type: "select",
             url: "https://cp.cloudflare.com",
             icon: "https://raw.githubusercontent.com/Orz-3/mini/master/Color/Static.png",
@@ -588,7 +588,7 @@ function overwriteProxyGroups(params) {
         {
             name: "✈️ 电报信息",
             type: "select",
-            proxies: ["🎯 节点选择", "HK - 自动选择", "JP - 自动选择", "KR - 自动选择", "SG - 自动选择", "US - 自动选择", "UK - 自动选择", "FR - 自动选择", "DE - 自动选择", "TW - 自动选择"],
+            proxies: ["🌍 国外代理", "HK - 自动选择", "JP - 自动选择", "KR - 自动选择", "SG - 自动选择", "US - 自动选择", "UK - 自动选择", "FR - 自动选择", "DE - 自动选择", "TW - 自动选择"],
             // "include-all": true,
             icon: "https://raw.githubusercontent.com/Orz-3/mini/master/Color/Telegram.png"
         },
@@ -596,7 +596,7 @@ function overwriteProxyGroups(params) {
         {
             name: "🤖 AIGC",
             type: "select",
-            proxies: ["US - 自动选择", "🎯 节点选择", "HK - 自动选择", "JP - 自动选择", "KR - 自动选择", "SG - 自动选择", "UK - 自动选择", "FR - 自动选择", "DE - 自动选择", "TW - 自动选择"],
+            proxies: ["US - 自动选择", "🌍 国外代理", "HK - 自动选择", "JP - 自动选择", "KR - 自动选择", "SG - 自动选择", "UK - 自动选择", "FR - 自动选择", "DE - 自动选择", "TW - 自动选择"],
             // "include-all": true,
             icon: "https://raw.githubusercontent.com/Orz-3/mini/master/Color/OpenAI.png"
         },
@@ -604,7 +604,7 @@ function overwriteProxyGroups(params) {
         {
             name: "🍎 苹果服务",
             type: "select",
-            proxies: ["DIRECT", "🎯 节点选择", "HK - 自动选择", "JP - 自动选择", "KR - 自动选择", "SG - 自动选择", "US - 自动选择", "UK - 自动选择", "FR - 自动选择", "DE - 自动选择", "TW - 自动选择"],
+            proxies: ["DIRECT", "🌍 国外代理", "HK - 自动选择", "JP - 自动选择", "KR - 自动选择", "SG - 自动选择", "US - 自动选择", "UK - 自动选择", "FR - 自动选择", "DE - 自动选择", "TW - 自动选择"],
             // "include-all": true,
             icon: "https://raw.githubusercontent.com/Orz-3/mini/master/Color/Apple.png"
         },
@@ -612,7 +612,7 @@ function overwriteProxyGroups(params) {
         {
             name: "Ⓜ️ 微软服务",
             type: "select",
-            proxies: ["DIRECT", "🎯 节点选择", "HK - 自动选择", "JP - 自动选择", "KR - 自动选择", "SG - 自动选择", "US - 自动选择", "UK - 自动选择", "FR - 自动选择", "DE - 自动选择", "TW - 自动选择"],
+            proxies: ["DIRECT", "🌍 国外代理", "HK - 自动选择", "JP - 自动选择", "KR - 自动选择", "SG - 自动选择", "US - 自动选择", "UK - 自动选择", "FR - 自动选择", "DE - 自动选择", "TW - 自动选择"],
             // "include-all": true,
             icon: "https://raw.githubusercontent.com/Orz-3/mini/master/Color/Microsoft.png"
         },
@@ -645,8 +645,8 @@ function overwriteRules(params) {
     // 非 IP 类规则（按优先级排序）
     const nonipRules = [
         // CDN 加速
-        "RULE-SET,cdn_domainset,🎯 节点选择",
-        "RULE-SET,cdn_non_ip,🎯 节点选择",
+        "RULE-SET,cdn_domainset,🌍 国外代理",
+        "RULE-SET,cdn_non_ip,🌍 国外代理",
         // 流媒体
         "RULE-SET,stream_non_ip,US - 自动选择",
         // Telegram
@@ -656,15 +656,15 @@ function overwriteRules(params) {
         "RULE-SET,apple_cn_non_ip,DIRECT",
         "RULE-SET,apple_services,🍎 苹果服务",
         // 下载
-        "RULE-SET,download_domainset,🎯 节点选择",
-        "RULE-SET,download_non_ip,🎯 节点选择",
+        "RULE-SET,download_domainset,🌍 国外代理",
+        "RULE-SET,download_non_ip,🌍 国外代理",
         // Microsoft 服务
         "RULE-SET,microsoft_cdn_non_ip,DIRECT",
         "RULE-SET,microsoft_non_ip,Ⓜ️ 微软服务",
         // AIGC
         "RULE-SET,ai_non_ip,🤖 AIGC",
         // 全球服务
-        "RULE-SET,global_non_ip,🎯 节点选择",
+        "RULE-SET,global_non_ip,🌍 国外代理",
         // 国内服务
         "RULE-SET,domestic_non_ip,🇨🇳 国内代理",
         "RULE-SET,direct_non_ip,DIRECT",
@@ -693,7 +693,7 @@ function overwriteRules(params) {
         // 中国 IP（走 🇨🇳 国内代理 组,可切换直连 / 代理池）
         "RULE-SET,china_ip,🇨🇳 国内代理",
         // 兜底规则
-        "MATCH,🎯 节点选择"
+        "MATCH,🌍 国外代理"
     ];
 
     // 合并所有规则
@@ -712,7 +712,7 @@ function overwriteRules(params) {
             path: "./rule_set/sukkaw_ruleset/reject_non_ip_no_drop.txt",
             interval: 43200,
             format: "text",
-            proxy: "🎯 节点选择"
+            proxy: "🌍 国外代理"
         },
         reject_non_ip_drop: {
             type: "http",
@@ -721,7 +721,7 @@ function overwriteRules(params) {
             path: "./rule_set/sukkaw_ruleset/reject_non_ip_drop.txt",
             interval: 43200,
             format: "text",
-            proxy: "🎯 节点选择"
+            proxy: "🌍 国外代理"
         },
         reject_non_ip: {
             type: "http",
@@ -730,7 +730,7 @@ function overwriteRules(params) {
             path: "./rule_set/sukkaw_ruleset/reject_non_ip.txt",
             interval: 43200,
             format: "text",
-            proxy: "🎯 节点选择"
+            proxy: "🌍 国外代理"
         },
         reject_domainset: {
             type: "http",
@@ -739,7 +739,7 @@ function overwriteRules(params) {
             path: "./rule_set/sukkaw_ruleset/reject_domainset.txt",
             interval: 43200,
             format: "text",
-            proxy: "🎯 节点选择"
+            proxy: "🌍 国外代理"
         },
         reject_ip: {
             type: "http",
@@ -748,7 +748,7 @@ function overwriteRules(params) {
             path: "./rule_set/sukkaw_ruleset/reject_ip.txt",
             interval: 43200,
             format: "text",
-            proxy: "🎯 节点选择"
+            proxy: "🌍 国外代理"
         },
         // CDN 加速
         cdn_domainset: {
@@ -758,7 +758,7 @@ function overwriteRules(params) {
             path: "./rule_set/sukkaw_ruleset/cdn_domainset.txt",
             interval: 43200,
             format: "text",
-            proxy: "🎯 节点选择"
+            proxy: "🌍 国外代理"
         },
         cdn_non_ip: {
             type: "http",
@@ -767,7 +767,7 @@ function overwriteRules(params) {
             path: "./rule_set/sukkaw_ruleset/cdn_non_ip.txt",
             interval: 43200,
             format: "text",
-            proxy: "🎯 节点选择"
+            proxy: "🌍 国外代理"
         },
         // 流媒体
         stream_non_ip: {
@@ -777,7 +777,7 @@ function overwriteRules(params) {
             path: "./rule_set/sukkaw_ruleset/stream_non_ip.txt",
             interval: 43200,
             format: "text",
-            proxy: "🎯 节点选择"
+            proxy: "🌍 国外代理"
         },
         stream_ip: {
             type: "http",
@@ -786,7 +786,7 @@ function overwriteRules(params) {
             path: "./rule_set/sukkaw_ruleset/stream_ip.txt",
             interval: 43200,
             format: "text",
-            proxy: "🎯 节点选择"
+            proxy: "🌍 国外代理"
         },
         // AIGC
         ai_non_ip: {
@@ -796,7 +796,7 @@ function overwriteRules(params) {
             path: "./rule_set/sukkaw_ruleset/ai_non_ip.txt",
             interval: 43200,
             format: "text",
-            proxy: "🎯 节点选择"
+            proxy: "🌍 国外代理"
         },
         // telegram
         telegram_non_ip: {
@@ -806,7 +806,7 @@ function overwriteRules(params) {
             path: "./rule_set/sukkaw_ruleset/telegram_non_ip.txt",
             interval: 43200,
             format: "text",
-            proxy: "🎯 节点选择"
+            proxy: "🌍 国外代理"
         },
         telegram_ip: {
             type: "http",
@@ -815,7 +815,7 @@ function overwriteRules(params) {
             path: "./rule_set/sukkaw_ruleset/telegram_ip.txt",
             interval: 43200,
             format: "text",
-            proxy: "🎯 节点选择"
+            proxy: "🌍 国外代理"
         },
         // Apple 服务
         apple_cdn: {
@@ -825,7 +825,7 @@ function overwriteRules(params) {
             path: "./rule_set/sukkaw_ruleset/apple_cdn.txt",
             interval: 43200,
             format: "text",
-            proxy: "🎯 节点选择"
+            proxy: "🌍 国外代理"
         },
         apple_services: {
             type: "http",
@@ -834,7 +834,7 @@ function overwriteRules(params) {
             path: "./rule_set/sukkaw_ruleset/apple_services.txt",
             interval: 43200,
             format: "text",
-            proxy: "🎯 节点选择"
+            proxy: "🌍 国外代理"
         },
         apple_cn_non_ip: {
             type: "http",
@@ -843,7 +843,7 @@ function overwriteRules(params) {
             path: "./rule_set/sukkaw_ruleset/apple_cn_non_ip.txt",
             interval: 43200,
             format: "text",
-            proxy: "🎯 节点选择"
+            proxy: "🌍 国外代理"
         },
         // Microsoft 服务
         microsoft_cdn_non_ip: {
@@ -853,7 +853,7 @@ function overwriteRules(params) {
             path: "./rule_set/sukkaw_ruleset/microsoft_cdn_non_ip.txt",
             interval: 43200,
             format: "text",
-            proxy: "🎯 节点选择"
+            proxy: "🌍 国外代理"
         },
         microsoft_non_ip: {
             type: "http",
@@ -862,7 +862,7 @@ function overwriteRules(params) {
             path: "./rule_set/sukkaw_ruleset/microsoft_non_ip.txt",
             interval: 43200,
             format: "text",
-            proxy: "🎯 节点选择"
+            proxy: "🌍 国外代理"
         },
         // 下载
         download_domainset: {
@@ -872,7 +872,7 @@ function overwriteRules(params) {
             path: "./rule_set/sukkaw_ruleset/download_domainset.txt",
             interval: 43200,
             format: "text",
-            proxy: "🎯 节点选择"
+            proxy: "🌍 国外代理"
         },
         download_non_ip: {
             type: "http",
@@ -881,7 +881,7 @@ function overwriteRules(params) {
             path: "./rule_set/sukkaw_ruleset/download_non_ip.txt",
             interval: 43200,
             format: "text",
-            proxy: "🎯 节点选择"
+            proxy: "🌍 国外代理"
         },
         // 局域网
         lan_non_ip: {
@@ -891,7 +891,7 @@ function overwriteRules(params) {
             path: "./rule_set/sukkaw_ruleset/lan_non_ip.txt",
             interval: 43200,
             format: "text",
-            proxy: "🎯 节点选择"
+            proxy: "🌍 国外代理"
         },
         lan_ip: {
             type: "http",
@@ -900,7 +900,7 @@ function overwriteRules(params) {
             path: "./rule_set/sukkaw_ruleset/lan_ip.txt",
             interval: 43200,
             format: "text",
-            proxy: "🎯 节点选择"
+            proxy: "🌍 国外代理"
         },
         domestic_non_ip: {
             type: "http",
@@ -909,7 +909,7 @@ function overwriteRules(params) {
             path: "./rule_set/sukkaw_ruleset/domestic_non_ip.txt",
             interval: 43200,
             format: "text",
-            proxy: "🎯 节点选择"
+            proxy: "🌍 国外代理"
         },
         direct_non_ip: {
             type: "http",
@@ -918,7 +918,7 @@ function overwriteRules(params) {
             path: "./rule_set/sukkaw_ruleset/direct_non_ip.txt",
             interval: 43200,
             format: "text",
-            proxy: "🎯 节点选择"
+            proxy: "🌍 国外代理"
         },
         global_non_ip: {
             type: "http",
@@ -927,7 +927,7 @@ function overwriteRules(params) {
             path: "./rule_set/sukkaw_ruleset/global_non_ip.txt",
             interval: 43200,
             format: "text",
-            proxy: "🎯 节点选择"
+            proxy: "🌍 国外代理"
         },
         domestic_ip: {
             type: "http",
@@ -936,7 +936,7 @@ function overwriteRules(params) {
             path: "./rule_set/sukkaw_ruleset/domestic_ip.txt",
             interval: 43200,
             format: "text",
-            proxy: "🎯 节点选择"
+            proxy: "🌍 国外代理"
         },
         china_ip: {
             type: "http",
@@ -945,7 +945,7 @@ function overwriteRules(params) {
             path: "./rule_set/sukkaw_ruleset/china_ip.txt",
             interval: 43200,
             format: "text",
-            proxy: "🎯 节点选择"
+            proxy: "🌍 国外代理"
         }
     };
 
