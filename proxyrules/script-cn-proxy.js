@@ -551,10 +551,10 @@ function overwriteProxyGroups(params) {
             name: "🇺🇳 国外自动选择",
             type: "select",
             icon: "https://raw.githubusercontent.com/Orz-3/mini/master/Color/Urltest.png",
-            proxies: ["ALl - 国外自动选择"],
+            proxies: ["ALL - 国外自动选择"],
         },
         {
-            name: "ALl - 国外自动选择",
+            name: "ALL - 国外自动选择",
             type: "url-test",
             url: "https://cp.cloudflare.com",
             interval: 300,
