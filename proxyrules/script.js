@@ -10,10 +10,10 @@ function wordCode(code) {
 }
 
 var CONFIG = {
-    // 是否生成「🇨🇳 国内代理」组
-    // false = 国内域名 / IP 直接 DIRECT
-    // true  = 国内域名 / IP 走「🇨🇳 国内代理」组（默认 DIRECT，可手动切到国内代理池）
-    enableChinaProxy: false,
+    // 是否生成「🇨🇳 国内代理」组（默认开启）
+    // false = 不生成国内代理组，国内域名 / IP 直接 DIRECT
+    // true  = 生成国内代理组，国内域名 / IP 走该组（可在界面里切直连 / 国内代理池）
+    enableChinaProxy: true,
 
     // 只用这一个混合端口，订阅里自带的其它入站端口会被清掉
     mixedPort: 7890,
@@ -610,7 +610,7 @@ function overwriteProxyGroups(params) {
         proxies: foreignEntry,
     });
 
-    // 国内主入口：默认 DIRECT，需要时手动切到国内代理池（无国内代理版不生成）
+    // 国内主入口：默认 DIRECT，需要时在界面切到国内代理池（无国内代理版不生成）
     if (CONFIG.enableChinaProxy) {
         groups.push({
             name: "🇨🇳 国内代理",

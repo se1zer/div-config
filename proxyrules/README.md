@@ -20,7 +20,7 @@ Clash Party（原名 Mihomo Party）覆写脚本，用于代理规则的集中�
 
 | 配置项 | 默认值 | 说明 |
 |---|---|---|
-| `enableChinaProxy` | `false` | `false`：不生成「🇨🇳 国内代理」组，国内域名/IP 走 DIRECT<br>`true`：生成「🇨🇳 国内代理」组（默认 DIRECT，可手动切到国内代理池） |
+| `enableChinaProxy` | `true` | `true`：生成「🇨🇳 国内代理」组，国内域名/IP 走该组（组内默认 DIRECT，可在界面切到国内代理池）<br>`false`：不生成该组，国内域名/IP 直接 DIRECT |
 | `mixedPort` | `7890` | 唯一的混合代理端口 |
 | `allowLan` | `false` | 是否允许局域网连接 |
 | `logLevel` | `"info"` | 日志等级 |
@@ -42,7 +42,7 @@ Clash Party（原名 Mihomo Party）覆写脚本，用于代理规则的集中�
 | 组 | 类型 | 内容 |
 |---|---|---|
 | 🌍 国外代理 | select | 国外自动选择 / 国外手动选择 / 国外负载均衡 / DIRECT |
-| 🇨🇳 国内代理 | select | 仅 `enableChinaProxy: true` 时生成，默认 DIRECT |
+| 🇨🇳 国内代理 | select | 默认 DIRECT，可切「🇨🇳 国内手动选择」 |
 | 🇺🇳 国外自动选择 | select | ALL - 国外自动选择 + 各地区自动选择 |
 | 🇺🇳 国外手动选择 | select | 所有国外节点（无国内代理版包含全部节点） |
 | 🇨🇳 国内手动选择 | select | 仅 `enableChinaProxy: true` 时生成 |
@@ -58,7 +58,7 @@ Clash Party（原名 Mihomo Party）覆写脚本，用于代理规则的集中�
 3. 切换线路：
    - 全局出口：「🌍 国外代理」里选自动 / 手动 / 负载均衡
    - 具体节点：「🇺🇳 国外手动选择」「🇨🇳 国内手动选择」
-   - 国内流量默认直连；`enableChinaProxy: true` 时把「🇨🇳 国内代理」从 DIRECT 切到「🇨🇳 国内手动选择」即可走国内代理池
+   - 国内流量：默认 DIRECT（直连最快），在「🇨🇳 国内代理」组里可随时切到「🇨🇳 国内手动选择」走国内节点；选择会被 remember（`profile.store-selected`）。
 
 ## 规则顺序
 
