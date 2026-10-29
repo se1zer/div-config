@@ -79,12 +79,12 @@ function overwriteDns(params) {
 // Fake IP 过滤器：这些域名不使用假 IP，返回真实 IP
 function overwriteFakeIpFilter (params) {
     const fakeIpFilter = [
-        "+.+m2m",
-        "+.$injections.adguard.org",
-        "+.$local.adguard.org",
-        "+.+bogon",
-        "+.+lan",
-        "+.+localdomain",
+        "+.m2m",
+        "+.injections.adguard.org",
+        "+.local.adguard.org",
+        "+.bogon",
+        "+.lan",
+        "+.localdomain",
         "+.home.arpa",
         "+.10.in-addr.arpa",
         "+.16.172.in-addr.arpa",
