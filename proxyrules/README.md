@@ -1,67 +1,112 @@
 # Proxyrules
 
-Clash Party（原名 Mihomo Party）覆写脚本，用于代理规则的集中管理和自定义覆写。
+Clash Party（原名 Mihomo Party）覆写脚本。国外节点按国家分组，国内节点单独一组，AI / 电报单独分流。
 
-## 来源
+## 它做什么
 
-本规则文件来自 [yyhhyyyyyy/selfproxy](https://github.com/yyhhyyyyyy/selfproxy)，并按 Clash Party 2.x（mihomo 内核）修正过一轮。
+1. 只开 `CONFIG.port`（默认 7890）混合端口
+2. 设置国内 DNS（fake-ip + 阿里/腾讯 DoH）
+3. 国外节点按国家切分，国内节点单独一组
+4. 规则：去广告 → AI → 电报 → 流媒体 → 国内直连 → 其它走代理
 
-## 设计前提
-
-- 只使用 `mixed-port` 混合代理（默认 7890），订阅里自带的 `port` / `socks-port` / `redir-port` / `tproxy-port` / `listeners` 会被清掉
-- **不启用 TUN**（`tun.enable = false`），不写 `stack` / `strict-route` / `route-exclude-address` / `dns-hijack` 等 TUN 专用选项
-- 节点按「国内 / 国外」分开，各自可以手动选择
-
-## 目录
-
-只有 `script.js` 一个脚本，要改的东西全在文件顶部的 `CONFIG` 里。
-
-## CONFIG 一览（文件开头）
-
-| 配置项 | 默认值 | 说明 |
-|---|---|---|
-| `enableChinaProxy` | `true` | `true`：生成「🇨🇳 国内代理」组，国内域名/IP 走该组（组内默认 DIRECT，可在界面切到国内代理池）<br>`false`：不生成该组，国内域名/IP 直接 DIRECT |
-| `mixedPort` | `7890` | 唯一的混合代理端口 |
-| `allowLan` | `false` | 是否允许局域网连接 |
-| `logLevel` | `"info"` | 日志等级 |
-| `sniffer` | `true` | 域名嗅探。只走混合端口时可设 `false`，域名规则仍然生效，只有「应用自己解析成 IP 再连」的场景受影响 |
-| `testUrl` / `testInterval` / `tolerance` | cloudflare / 300 / 50 | 测速地址、间隔、容差 |
-| `loadBalanceStrategy` | `consistent-hashing` | 负载均衡策略 |
-| `nameserver` / `proxyServerNameserver` | 阿里 + 腾讯 DoH | 普通域名 / 代理节点域名的解析服务器 |
-| `defaultNameserver` | `223.5.5.5` / `119.29.29.29` | 必须为 IP，用于解析上面那些 DNS 服务器自己的域名 |
-| `excludeTerms` | 见文件 | 公告 / 信息节点过滤词，命中就不参与分组 |
-| `infoNodeRegex` | `/\d+\s*(条\|個\|个)\s*(线路\|節點\|节点)/i` | 过滤「过滤到14条线路」这类信息节点 |
-| `chinaKeywords` | 见文件 | 节点名里的国内关键词（省份 / 运营商） |
-| `includeTerms` | 见文件 | 节点名里的国家 / 地区关键词。英文缩写用 `wordCode()` 包一层，避免 Russia 命中 US；不使用旗帜表情 |
-| `customRules` | 4399 / red.unicom | 自定义规则，目标可写策略组名、节点名或 DIRECT / REJECT |
-
-`customRules` 里引用的目标不存在时（比如订阅换了节点名），脚本会**跳过这条规则并在日志里警告**，不会导致整份配置加载失败。
-
-## 生成的代理组
-
-| 组 | 类型 | 内容 |
-|---|---|---|
-| 🌍 国外代理 | select | 国外自动选择 / 国外手动选择 / 国外负载均衡 / DIRECT |
-| 🇨🇳 国内代理 | select | 默认 DIRECT，可切「🇨🇳 国内手动选择」 |
-| 🇺🇳 国外自动选择 | select | ALL - 国外自动选择 + 各地区自动选择 |
-| 🇺🇳 国外手动选择 | select | 所有国外节点（无国内代理版包含全部节点） |
-| 🇨🇳 国内手动选择 | select | 仅 `enableChinaProxy: true` 时生成 |
-| ⚖️ 国外负载均衡 | load-balance | 所有国外节点 |
-| ALL - 国外自动选择 | url-test（隐藏） | 所有国外节点 |
-| HK / MO / TW / SG / JP / KR / US / UK / FR / DE / 其它 - 自动选择 | url-test（隐藏） | 按节点名关键词归类，没有对应节点就不生成 |
-| ✈️ 电报信息 / 🤖 AIGC / 🍎 苹果服务 / Ⓜ️ 微软服务 | select | 默认指向「🌍 国外代理」，可切到任意地区组 |
-
-## 使用方式
+## 用法
 
 1. Clash Party → 覆写 → 导入 `script.js`
-2. 确认客户端里 TUN（虚拟网卡）保持关闭，代理端口使用 `mixedPort`
-3. 切换线路：
-   - 全局出口：「🌍 国外代理」里选自动 / 手动 / 负载均衡
-   - 具体节点：「🇺🇳 国外手动选择」「🇨🇳 国内手动选择」
-   - 国内流量：默认 DIRECT（直连最快），在「🇨🇳 国内代理」组里可随时切到「🇨🇳 国内手动选择」走国内节点；选择会被 remember（`profile.store-selected`）。
+2. TUN（虚拟网卡）保持关闭
+3. 代理端口与 `CONFIG.port` 一致
 
-## 规则顺序
+## 分组
 
-广告 → 自定义 → 局域网 → 流媒体 → 电报 → 苹果 → 微软 → AIGC → 下载 → direct → domestic → cdn → global → IP（reject / telegram / stream / lan / domestic / china）→ MATCH。
+| 组 | 类型 | 说明 |
+|---|---|---|
+| 🌍 国外代理 | select | 国外流量主入口：国外自动选择 / 国外手动选择 / 国外负载均衡 / DIRECT |
+| 🇨🇳 国内代理 | select | 默认 DIRECT，可切到国内手动选择 |
+| 🇺🇳 国外自动选择 | select | `ALL - 国外自动选择` + 各国自动选择组 |
+| 🇺🇳 国外手动选择 | select | 所有国外节点 |
+| ALL - 国外自动选择 | url-test（隐藏） | 所有国外节点测速 |
+| ⚖️ 国外负载均衡 | load-balance | 所有国外节点，按域名一致性哈希分配（同一域名固定走同一节点） |
+| 🇨🇳 国内手动选择 | select | 国内节点（没有就不生成） |
+| HK / MO / TW / SG / JP / KR / US / UK / FR / DE - 自动选择 | url-test（隐藏） | 按节点名归类，没有对应节点就不生成 |
+| 其它 - 自动选择 | url-test（隐藏） | 没有国家关键词、也不属于国内的节点 |
+| 🤖 AIGC | select | 默认 `US - 自动选择`，可切到任意地区组 |
+| 📺 流媒体 | select | 默认 `US - 自动选择`，可切到任意地区组 |
+| ✈️ 电报信息 | select | 默认「🌍 国外代理」，可切到任意地区组 |
 
-CDN 规则放在具体服务之后，避免抢走 AIGC / Apple / Microsoft / Telegram 的 CDN 域名。
+## 规则
+
+```yaml
+# 域名类（在前，域名请求命中就结束，不用先做 IP 解析）
+RULE-SET,ad,REJECT                       去广告 14.5 万条域名
+# CONFIG.customRules 里的自定义规则插在这里
+RULE-SET,reject-non-ip,REJECT            广告：domainset 覆盖不到的 keyword / wildcard / IP
+RULE-SET,reject-drop,REJECT-DROP         广告：QUIC 类静默丢弃
+RULE-SET,lan,DIRECT                      局域网域名（路由器 / NAS / 打印机）
+RULE-SET,domestic,🇨🇳 国内代理             国内域名
+RULE-SET,apple-cdn,DIRECT                苹果 CDN
+RULE-SET,apple-cn,DIRECT                 苹果国内域名
+RULE-SET,microsoft-cdn,DIRECT            微软 CDN（系统更新 / Office）
+RULE-SET,ai,🤖 AIGC                      AI
+RULE-SET,telegram-domain,✈️ 电报信息      电报域名
+RULE-SET,stream,📺 流媒体                  流媒体域名
+RULE-SET,direct,DIRECT                   强制直连（银行 / 政务 / 内网）
+RULE-SET,download-domainset,🌍 国外代理    大文件下载
+RULE-SET,download,🌍 国外代理              大文件下载（通配）
+# IP 类（在后）
+RULE-SET,reject-ip,REJECT                广告：IP 直连
+RULE-SET,telegram-ip,✈️ 电报信息,no-resolve 电报 IP
+RULE-SET,stream-ip,📺 流媒体,no-resolve     流媒体 IP
+GEOIP,CN,🇨🇳 国内代理                      国内 IP
+MATCH,🌍 国外代理                           兜底
+```
+
+`enableAdBlock: false` 时，`ad` / `reject-non-ip` / `reject-drop` / `reject-ip` 四个规则集和对应 4 条规则都不生成。
+
+## 规则集（17 个，从 ruleset.skk.moe 拉取，12 小时更新）
+
+| 规则集 | behavior | 条数 | 作用 |
+|---|---|---|---|
+| `domainset/reject.txt` | domain | 145,537 | 广告域名 |
+| `ip/reject.txt` | classical | 782 | 广告 IP |
+| `non_ip/reject.txt` | classical | 371 | 广告 keyword / wildcard / IP |
+| `non_ip/reject-drop.txt` | classical | 29 | 广告 QUIC 丢包 |
+| `non_ip/lan.txt` | classical | 50 | 局域网域名 |
+| `non_ip/domestic.txt` | classical | 870 | 国内域名 |
+| `domainset/apple_cdn.txt` | domain | 160 | 苹果 CDN |
+| `non_ip/apple_cn.txt` | classical | 10 | 苹果国内域名 |
+| `non_ip/microsoft_cdn.txt` | classical | 51 | 微软 CDN |
+| `non_ip/direct.txt` | classical | 219 | 强制直连 |
+| `domainset/download.txt` | domain | 1,969 | 大文件下载 |
+| `non_ip/download.txt` | classical | 10 | 大文件下载（通配） |
+| `non_ip/ai.txt` | classical | 55 | AI |
+| `non_ip/telegram.txt` | classical | 15 | 电报域名 |
+| `ip/telegram.txt` | classical | 15 | 电报 IP |
+| `non_ip/stream.txt` | classical | 287 | 流媒体域名 |
+| `ip/stream.txt` | classical | 20 | 流媒体 IP |
+
+`domainset/` 下是纯域名，behavior 必须写 `domain`；`non_ip/` 和 `ip/` 下带规则前缀，写 `classical`。写错会加载不出规则。
+
+## 设置（文件开头的 CONFIG）
+
+| 键 | 默认值 | 说明 |
+|---|---|---|
+| `port` | `7890` | 混合代理端口 |
+| `enableAdBlock` | `true` | 是否去广告 |
+| `customRules` | 4399 / red.unicom | 自定义规则，插在去广告之后、AI 之前。目标可写策略组名、节点名或 DIRECT / REJECT；目标不存在时这条会被跳过 |
+| `testUrl` / `testInterval` / `tolerance` | cloudflare / 300 / 50 | 自动选择的测速地址、间隔（秒）、容差（毫秒） |
+| `chinaKeywords` | 省份 + 运营商 + 中国 | 节点名命中则归为国内节点 |
+| `infoNodeKeywords` | 剩余 / 到期 / 套餐… | 机场公告节点，命中则忽略 |
+| `regions` | HK / MO / TW / SG / JP / KR / US / UK / FR / DE | 国家关键词。英文缩写用 `wordCode()` 包一层，避免 `Russia` 命中 `US` |
+| `rulesets` | skk 的 17 个规则集 | 广告 / 局域网 / 国内 / 苹果微软 CDN / 强制直连 / 下载 / AI / 电报 / 流媒体，见下面「规则集」表格 |
+
+## 几点说明
+
+- **脚本不删除订阅里的其它键**。订阅如果自带 `port`、`socks-port`、`listeners`、`tun.enable: true`，这些都会原样保留。需要强制关掉时自己补一行，例如：
+  ```js
+  params.tun = { enable: false };
+  delete params["socks-port"];
+  ```
+- **不写 `profile` / `unified-delay` / `find-process-mode`**。它们的默认值分别是 `store-selected: true`、`false`、`strict`，已经符合预期，显式写是冗余。
+- **手动选择的节点会被记住**（默认 `store-selected: true`），重载配置不会丢。
+- **流媒体只匹配域名**（skk 的 `non_ip/stream.txt`）。流媒体走 IP 直连的那部分流量会落到 `MATCH` → 「🌍 国外代理」，此时在「📺 流媒体」里选的节点对它不生效。需要覆盖的话再加一个 `ip/stream.txt` 规则集。
+- **规则集格式要对上**：`domainset/` 下是纯域名列表，`behavior` 必须写 `domain`；`non_ip/` 和 `ip/` 下是带前缀的规则，`behavior` 写 `classical`。写错规则集加载不出来。
+- **第一次启动会慢一点**：规则集和 geoip 数据需要下载一次（广告规则集约 3.3MB、geoip 约 8MB），之后正常。
