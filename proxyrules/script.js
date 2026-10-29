@@ -61,10 +61,14 @@ var CONFIG = {
         rejectNonIp: "https://ruleset.skk.moe/Clash/non_ip/reject.txt",
         // 广告：QUIC 类静默丢弃，避免请求卡住
         rejectDrop: "https://ruleset.skk.moe/Clash/non_ip/reject-drop.txt",
+        // 广告：PCDN 吸血域名（p2p.qq.com、pcdn.yximgs.com、douyucdn.cn 等），用 REJECT 不用 DROP
+        rejectNoDrop: "https://ruleset.skk.moe/Clash/non_ip/reject-no-drop.txt",
         // 广告：用 IP 直连的广告
         rejectIp: "https://ruleset.skk.moe/Clash/ip/reject.txt",
         // 局域网域名（路由器管理页 / NAS / 打印机）
         lan: "https://ruleset.skk.moe/Clash/non_ip/lan.txt",
+        // 私网 / 回环 IP 段（127.0.0.0/8、192.168.0.0/16 等）
+        lanIp: "https://ruleset.skk.moe/Clash/ip/lan.txt",
         // 国内域名（省一次 DNS 解析，也避免解析到境外 CDN 被误判）
         domestic: "https://ruleset.skk.moe/Clash/non_ip/domestic.txt",
         // 苹果 CDN / 苹果国内域名
@@ -387,6 +391,7 @@ function buildRules(params, groups) {
     if (CONFIG.enableAdBlock) {
         rules.push("RULE-SET,reject-non-ip,REJECT");
         rules.push("RULE-SET,reject-drop,REJECT-DROP");
+        rules.push("RULE-SET,reject-no-drop,REJECT");
     }
 
     // 局域网 / 国内域名
@@ -407,6 +412,9 @@ function buildRules(params, groups) {
     rules.push("RULE-SET,direct,DIRECT");
     rules.push("RULE-SET,download-domainset,🌍 国外代理");
     rules.push("RULE-SET,download,🌍 国外代理");
+
+    // 私网 / 回环 / 组播直连（127.0.0.1、192.168.x.x 等走代理必然失败）
+    rules.push("RULE-SET,lan-ip,DIRECT,no-resolve");
 
     // IP 类广告
     if (CONFIG.enableAdBlock) {
@@ -429,6 +437,7 @@ function buildRules(params, groups) {
     // 规则集：domainset 目录用 domain，non_ip / ip 目录用 classical
     const providers = {
         lan: createProvider(CONFIG.rulesets.lan, "classical", "./rule_set/lan.txt"),
+        "lan-ip": createProvider(CONFIG.rulesets.lanIp, "classical", "./rule_set/lan_ip.txt"),
         domestic: createProvider(CONFIG.rulesets.domestic, "classical", "./rule_set/domestic.txt"),
         "apple-cdn": createProvider(CONFIG.rulesets.appleCdn, "domain", "./rule_set/apple_cdn.txt"),
         "apple-cn": createProvider(CONFIG.rulesets.appleCn, "classical", "./rule_set/apple_cn.txt"),
@@ -448,6 +457,7 @@ function buildRules(params, groups) {
         providers.ad = createProvider(CONFIG.rulesets.ad, "domain", "./rule_set/ad.txt");
         providers["reject-non-ip"] = createProvider(CONFIG.rulesets.rejectNonIp, "classical", "./rule_set/reject_non_ip.txt");
         providers["reject-drop"] = createProvider(CONFIG.rulesets.rejectDrop, "classical", "./rule_set/reject_drop.txt");
+        providers["reject-no-drop"] = createProvider(CONFIG.rulesets.rejectNoDrop, "classical", "./rule_set/reject_no_drop.txt");
         providers["reject-ip"] = createProvider(CONFIG.rulesets.rejectIp, "classical", "./rule_set/reject_ip.txt");
     }
 

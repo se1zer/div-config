@@ -40,6 +40,7 @@ RULE-SET,ad,REJECT                       去广告 14.5 万条域名
 # CONFIG.customRules 里的自定义规则插在这里
 RULE-SET,reject-non-ip,REJECT            广告：domainset 覆盖不到的 keyword / wildcard / IP
 RULE-SET,reject-drop,REJECT-DROP         广告：QUIC 类静默丢弃
+RULE-SET,reject-no-drop,REJECT            广告：PCDN 吸血域名（p2p.qq.com、pcdn.yximgs.com 等）
 RULE-SET,lan,DIRECT                      局域网域名（路由器 / NAS / 打印机）
 RULE-SET,domestic,🇨🇳 国内代理             国内域名
 RULE-SET,apple-cdn,DIRECT                苹果 CDN
@@ -52,6 +53,7 @@ RULE-SET,direct,DIRECT                   强制直连（银行 / 政务 / 内网
 RULE-SET,download-domainset,🌍 国外代理    大文件下载
 RULE-SET,download,🌍 国外代理              大文件下载（通配）
 # IP 类（在后）
+RULE-SET,lan-ip,DIRECT,no-resolve        私网 / 回环（127.0.0.1、192.168.x.x 等）
 RULE-SET,reject-ip,REJECT                广告：IP 直连
 RULE-SET,telegram-ip,✈️ 电报信息,no-resolve 电报 IP
 RULE-SET,stream-ip,📺 流媒体,no-resolve     流媒体 IP
@@ -59,9 +61,11 @@ GEOIP,CN,🇨🇳 国内代理                      国内 IP
 MATCH,🌍 国外代理                           兜底
 ```
 
-`enableAdBlock: false` 时，`ad` / `reject-non-ip` / `reject-drop` / `reject-ip` 四个规则集和对应 4 条规则都不生成。
+`enableAdBlock: false` 时，`ad` / `reject-non-ip` / `reject-drop` / `reject-no-drop` / `reject-ip` 五个规则集和对应 5 条规则都不生成。
 
-## 规则集（17 个，从 ruleset.skk.moe 拉取，12 小时更新）
+`lan-ip` 规则集（`ip/lan.txt`，12 条）负责私网 / 回环 / 组播直连：`127.0.0.1` 和 `192.168.x.x` 这类地址走代理一定失败。
+
+## 规则集（19 个，从 ruleset.skk.moe 拉取，12 小时更新）
 
 | 规则集 | behavior | 条数 | 作用 |
 |---|---|---|---|
@@ -69,7 +73,9 @@ MATCH,🌍 国外代理                           兜底
 | `ip/reject.txt` | classical | 782 | 广告 IP |
 | `non_ip/reject.txt` | classical | 371 | 广告 keyword / wildcard / IP |
 | `non_ip/reject-drop.txt` | classical | 29 | 广告 QUIC 丢包 |
+| `non_ip/reject-no-drop.txt` | classical | 45 | PCDN 吸血域名 |
 | `non_ip/lan.txt` | classical | 50 | 局域网域名 |
+| `ip/lan.txt` | classical | 12 | 私网 / 回环 IP 段 |
 | `non_ip/domestic.txt` | classical | 870 | 国内域名 |
 | `domainset/apple_cdn.txt` | domain | 160 | 苹果 CDN |
 | `non_ip/apple_cn.txt` | classical | 10 | 苹果国内域名 |
@@ -96,7 +102,7 @@ MATCH,🌍 国外代理                           兜底
 | `chinaKeywords` | 省份 + 运营商 + 中国 | 节点名命中则归为国内节点 |
 | `infoNodeKeywords` | 剩余 / 到期 / 套餐… | 机场公告节点，命中则忽略 |
 | `regions` | HK / MO / TW / SG / JP / KR / US / UK / FR / DE | 国家关键词。英文缩写用 `wordCode()` 包一层，避免 `Russia` 命中 `US` |
-| `rulesets` | skk 的 17 个规则集 | 广告 / 局域网 / 国内 / 苹果微软 CDN / 强制直连 / 下载 / AI / 电报 / 流媒体，见下面「规则集」表格 |
+| `rulesets` | skk 的 19 个规则集 | 广告 / 局域网 / 国内 / 苹果微软 CDN / 强制直连 / 下载 / AI / 电报 / 流媒体，见下面「规则集」表格 |
 
 ## 几点说明
 
@@ -109,4 +115,5 @@ MATCH,🌍 国外代理                           兜底
 - **手动选择的节点会被记住**（默认 `store-selected: true`），重载配置不会丢。
 - **流媒体只匹配域名**（skk 的 `non_ip/stream.txt`）。流媒体走 IP 直连的那部分流量会落到 `MATCH` → 「🌍 国外代理」，此时在「📺 流媒体」里选的节点对它不生效。需要覆盖的话再加一个 `ip/stream.txt` 规则集。
 - **规则集格式要对上**：`domainset/` 下是纯域名列表，`behavior` 必须写 `domain`；`non_ip/` 和 `ip/` 下是带前缀的规则，`behavior` 写 `classical`。写错规则集加载不出来。
-- **第一次启动会慢一点**：规则集和 geoip 数据需要下载一次（广告规则集约 3.3MB、geoip 约 8MB），之后正常。
+- **第一次启动会慢一点**：规则集和 geo 数据需要下载一次（广告规则集约 3.3MB、geoip 约 8MB、ASN 数据约 8.6MB），之后正常。
+- `ip/reject.txt` 里有 15 条 `IP-ASN` 规则，需要 `ASN.mmdb`。Clash Party 会自己下载；如果下载失败，只有广告 IP 那一条规则集受影响，不影响其它规则。
