@@ -1,36 +1,113 @@
-// Mihomo Party 覆写 / Clash Verge Rev 扩展脚本
+// Mihomo Party / Clash Party 覆写脚本（mihomo 内核）
+// 设计前提：只使用 mixed-port 混合代理，不启用 TUN
+// 能力：国外节点、国内节点各自有独立的手动选择组
+
+// ==================== 用户自定义区（一般只改这一段） ====================
+
+// 英文字母缩写前后不能紧跟其它字母：避免 Russia 命中 US、Ukraine 命中 UK/KR
+function wordCode(code) {
+    return `(?:^|[^A-Za-z])${code}(?:[^A-Za-z]|$)`;
+}
+
+var CONFIG = {
+    // 是否生成「🇨🇳 国内代理」组
+    // false = 国内域名 / IP 直接 DIRECT
+    // true  = 国内域名 / IP 走「🇨🇳 国内代理」组（默认 DIRECT，可手动切到国内代理池）
+    enableChinaProxy: false,
+
+    // 只用这一个混合端口，订阅里自带的其它入站端口会被清掉
+    mixedPort: 7890,
+    allowLan: false,
+    logLevel: "info",
+    // 域名嗅探：只走混合端口时可以设为 false（域名规则依旧生效，只有"应用自己解析成 IP 再连"的场景受影响）
+    sniffer: true,
+
+    // 测速参数
+    testUrl: "https://cp.cloudflare.com",
+    testInterval: 300,
+    tolerance: 50,
+    loadBalanceStrategy: "consistent-hashing", // consistent-hashing / round-robin / sticky-sessions
+
+    // DNS
+    nameserver: ["https://223.5.5.5/dns-query", "https://doh.pub/dns-query"],
+    proxyServerNameserver: ["https://223.5.5.5/dns-query", "https://doh.pub/dns-query"],
+    defaultNameserver: ["223.5.5.5", "119.29.29.29"], // 必须为 IP，用于解析上面那些 DNS 域名
+
+    // 公告 / 信息节点过滤词：命中就不参与分组
+    excludeTerms: "剩余|到期|过期|官网|网址|地址|订阅|客服|发布|公告|流量|重置|试用|禁止|联系|邮箱|群组|频道|更新时间|过滤|条线路|线路数|个节点|条节点|套餐|倍率|已用|限速|通知|提醒",
+    // 形如「过滤到14条线路」的信息节点
+    infoNodeRegex: /\d+\s*(条|個|个)\s*(线路|節點|节点)/i,
+
+    // 节点名里的国内关键词（省份 / 运营商）
+    chinaKeywords: "中国|国内|电信|联通|移动|铁通|广电|教育网|黑龙江|吉林|辽宁|北京|天津|内蒙古|新疆|甘肃|宁夏|青海|陕西|山西|河北|河南|山东|江苏|上海|浙江|安徽|福建|江西|湖北|湖南|广东|广西|海南|四川|贵州|云南|重庆|西藏",
+
+    // 节点名里的国家 / 地区关键词（新增地区照这个格式加一行）
+    // 英文缩写用 wordCode() 包一层；不使用旗帜表情，纯旗帜命名的节点会落到「其它 - 自动选择」
+    includeTerms: {
+        HK: `(香港|Hong Kong|HongKong|${wordCode("HK")})`,
+        MO: `(澳门|澳門|Macao|Macau|${wordCode("MO")})`,
+        TW: `(台湾|台灣|Taiwan|${wordCode("TW")})`,
+        SG: `(新加坡|狮城|Singapore|${wordCode("SG")})`,
+        JP: `(日本|Japan|东京|大阪|${wordCode("JP")})`,
+        KR: `(韩国|韓國|Korea|首尔|首爾|${wordCode("KR")})`,
+        US: `(美国|美國|United States|America|洛杉矶|圣何塞|西雅图|纽约|达拉斯|硅谷|凤凰城|${wordCode("US")})`,
+        UK: `(英国|英國|United Kingdom|Britain|伦敦|${wordCode("UK")})`,
+        FR: `(法国|法國|France|巴黎|${wordCode("FR")})`,
+        DE: `(德国|德國|Germany|法兰克福|${wordCode("DE")})`
+    },
+
+    // 自定义规则：优先级次于去广告规则、高于其它规则
+    // 目标可以写策略组名、节点名，或 DIRECT / REJECT
+    // 目标不存在时这条会被自动跳过（只在日志里警告），不会导致整份配置加载失败
+    customRules: [
+        "DOMAIN-SUFFIX,4399.cn,CSTEAM-VPN",
+        "DOMAIN-SUFFIX,red.unicom,CSTEAM-VPN",
+    ],
+
+    // 自定义 DNS 分流域名写到 overwriteNameserverPolicy 里，hosts 写到 overwriteHosts 里
+};
+
+// ==================== 以下一般无需修改 ====================
+
+var BUILTIN_POLICIES = ["DIRECT", "REJECT", "REJECT-DROP", "PASS", "COMPATIBLE", "GLOBAL"];
 
 function main(params) {
-    if (!params.proxies) return params;
+
     overwriteBasicOptions(params);
     overwriteDns(params);
     overwriteFakeIpFilter(params);
     overwriteNameserverPolicy(params);
     overwriteHosts(params);
-    overwriteTunnel(params);
-    overwriteProxyGroups(params);
-    overwriteRules(params);
+    const groups = overwriteProxyGroups(params);
+    overwriteRules(params, groups);
     return params;
 }
 
-// 基础选项：端口、模式、日志、嗅探等
+// 基础选项：端口、模式、日志、嗅探；只走混合端口，不开 TUN
 function overwriteBasicOptions(params) {
+    // 清掉订阅里可能自带的其它入站端口，避免多端口对外开放
+    ["port", "socks-port", "redir-port", "tproxy-port", "listeners"].forEach((key) => {
+        delete params[key];
+    });
+
     const otherOptions = {
-        "mixed-port": 7890,
-        "allow-lan": true,
+        "mixed-port": CONFIG.mixedPort,
+        "allow-lan": CONFIG.allowLan,
         mode: "rule",
-        "log-level": "info",
+        "log-level": CONFIG.logLevel,
         ipv6: false,
-        "find-process-mode": "strict",
+        "find-process-mode": "off",
         profile: {
             "store-selected": true,
             "store-fake-ip": true,
         },
         "unified-delay": true,
         "tcp-concurrent": true,
-        "global-client-fingerprint": "chrome",
+        // 新版内核已移除 global-client-fingerprint，如需 TLS 指纹请在节点上设置 client-fingerprint
         sniffer: {
-            enable: true,
+            enable: CONFIG.sniffer,
+            "force-dns-mapping": true,
+            "parse-pure-ip": true,
             sniff: {
                 HTTP: {
                     ports: [80, "8080-8880"],
@@ -49,27 +126,26 @@ function overwriteBasicOptions(params) {
     Object.keys(otherOptions).forEach((key) => {
         params[key] = otherOptions[key];
     });
+
+    // 不使用 TUN（虚拟网卡），只走 CONFIG.mixedPort 混合端口
+    params["tun"] = { enable: false };
 }
 
 // DNS 配置：Fake IP 模式、DNS 服务器
 function overwriteDns(params) {
-    const dnsList = [
-        "https://223.5.5.5/dns-query",
-        "https://doh.pub/dns-query",
-    ];
-
-    const proxyDnsList = [
-        "https://223.5.5.5/dns-query",
-        "https://doh.pub/dns-query",
-    ];
+    const dnsList = CONFIG.nameserver;
+    const proxyDnsList = CONFIG.proxyServerNameserver;
 
     const dnsOptions = {
         enable: true,
-        "prefer-h3": true,
+        // UDP 443 被限速/阻断的网络下 prefer-h3 会拖死解析，关闭更稳
+        "prefer-h3": false,
         ipv6: false,
         "enhanced-mode": "fake-ip",
         "fake-ip-range": "198.18.0.1/16",
         "respect-rules": true,
+        // 用于解析 nameserver / nameserver-policy 里的域名（必须为 IP）
+        "default-nameserver": CONFIG.defaultNameserver,
         nameserver: dnsList,
         "proxy-server-nameserver": proxyDnsList,
     };
@@ -362,7 +438,6 @@ function overwriteNameserverPolicy (params) {
         // 360 系域名
         "*.qhimg.com": "https://doh.360.cn/dns-query",
         "*.qhimgs.com": "https://doh.360.cn/dns-query",
-        "*.qhimgs?.com": "https://doh.360.cn/dns-query",
         "*.qhres.com": "https://doh.360.cn/dns-query",
         "*.qhres2.com": "https://doh.360.cn/dns-query",
         "*.qhmsg.com": "https://doh.360.cn/dns-query",
@@ -454,163 +529,187 @@ function overwriteHosts (params) {
     params.hosts = hosts;
 }
 
-// TUN 配置：透明代理（全局代理）
-function overwriteTunnel(params) {
-    const tunnelOptions = {
-        enable: true,
-        stack: "system",
-        device: "tun0",
-        "dns-hijack": ["any:53", "tcp://any:53"],
-        "auto-route": true,
-        "auto-detect-interface": true,
-        "strict-route": true,
-        // 根据自己环境来看要排除哪些网段
-        "route-exclude-address": [],
-    };
-    params.tun = { ...tunnelOptions };
-}
-
-// 代理组：节点分组策略
+// 代理组：国外 / 国内节点分别可手动选择
 function overwriteProxyGroups(params) {
-    // 所有代理
-    const allProxies = params["proxies"].map((e) => e.name);
-    // 公共的正则片段
-    const excludeTerms = "剩余|到期|主页|官网|游戏|关注|网站|地址|有效|网址|禁止|邮箱|发布|客服|订阅|节点|问题|联系";
-    // 包含条件：各个国家或地区的关键词
-    const includeTerms = {
-        HK: "(香港|HK|Hong|🇭🇰)",
-        TW: "(台湾|TW|Taiwan|Wan|🇹🇼|🇨🇳)",
-        SG: "(新加坡|狮城|SG|Singapore|🇸🇬)",
-        JP: "(日本|JP|Japan|🇯🇵)",
-        KR: "(韩国|韓|KR|Korea|🇰🇷)",
-        US: "(美国|US|United States|America|🇺🇸)",
-        UK: "(英国|UK|United Kingdom|🇬🇧)",
-        FR: "(法国|FR|France|🇫🇷)",
-        DE: "(德国|DE|Germany|🇩🇪)"
-    };
-    // 合并所有国家关键词，供"其它"条件使用
-    const allCountryTerms = Object.values(includeTerms).join("|");
-    // 自动代理组正则表达式配置
-    const autoProxyGroupRegexs = [
-        { name: "HK - 自动选择", regex: new RegExp(`^(?=.*${includeTerms.HK})(?!.*${excludeTerms}).*$`, "i") },
-        { name: "TW - 自动选择", regex: new RegExp(`^(?=.*${includeTerms.TW})(?!.*${excludeTerms}).*$`, "i") },
-        { name: "SG - 自动选择", regex: new RegExp(`^(?=.*${includeTerms.SG})(?!.*${excludeTerms}).*$`, "i") },
-        { name: "JP - 自动选择", regex: new RegExp(`^(?=.*${includeTerms.JP})(?!.*${excludeTerms}).*$`, "i") },
-        { name: "KR - 自动选择", regex: new RegExp(`^(?=.*${includeTerms.KR})(?!.*${excludeTerms}).*$`, "i") },
-        { name: "US - 自动选择", regex: new RegExp(`^(?=.*${includeTerms.US})(?!.*${excludeTerms}).*$`, "i") },
-        { name: "UK - 自动选择", regex: new RegExp(`^(?=.*${includeTerms.UK})(?!.*${excludeTerms}).*$`, "i") },
-        { name: "FR - 自动选择", regex: new RegExp(`^(?=.*${includeTerms.FR})(?!.*${excludeTerms}).*$`, "i") },
-        { name: "DE - 自动选择", regex: new RegExp(`^(?=.*${includeTerms.DE})(?!.*${excludeTerms}).*$`, "i") },
-        {
-            name: "其它 - 自动选择",
-            regex: new RegExp(`^(?!.*(?:${allCountryTerms}|${excludeTerms})).*$`, "i")
-        }
-    ];
+    const allProxies = (params["proxies"] || []).map((e) => e.name);
 
-    const autoProxyGroups = autoProxyGroupRegexs
-        .map((item) => ({
-            name: item.name,
-            type: "url-test",
-            url: "https://cp.cloudflare.com",
-            interval: 300,
-            tolerance: 50,
-            proxies: getProxiesByRegex(params, item.regex),
-            hidden: true,
-        }))
+    // 关键词、过滤词、测速参数都来自文件顶部的 CONFIG
+    const { excludeTerms, chinaKeywords, includeTerms } = CONFIG;
+    const allCountryTerms = Object.values(includeTerms).join("|");
+
+    // 参与分组的节点（剔除公告节点）
+    const excludeRe = new RegExp(excludeTerms, "i");
+    const validProxies = allProxies.filter(
+        (name) => !excludeRe.test(name) && !CONFIG.infoNodeRegex.test(name)
+    );
+
+    // 国内池：带省份 / 运营商关键词，且不是港澳台或境外节点
+    const chinaRe = new RegExp(
+        `^(?=.*(?:${chinaKeywords}))(?!.*(?:${allCountryTerms}|${excludeTerms})).*$`,
+        "i"
+    );
+    const chinaProxies = validProxies.filter((name) => chinaRe.test(name));
+    // 国外池：国内池之外的其余节点（含 IEPL 专线等没有国家关键词的节点）
+    // 无国内代理版里没有国内池可用，全部节点都放进国外池
+    const foreignProxies = CONFIG.enableChinaProxy
+        ? validProxies.filter((name) => !chinaRe.test(name))
+        : validProxies;
+
+    // 国家 / 地区自动选择组（没有对应节点就不生成，避免空组和规则悬空）
+    const autoProxyGroups = Object.keys(includeTerms)
+        .map((code) => {
+            const re = new RegExp(`^(?=.*${includeTerms[code]})(?!.*(?:${excludeTerms})).*$`, "i");
+            return {
+                name: `${code} - 自动选择`,
+                type: "url-test",
+                url: CONFIG.testUrl,
+                interval: CONFIG.testInterval,
+                tolerance: CONFIG.tolerance,
+                hidden: true,
+                proxies: validProxies.filter((name) => re.test(name)),
+            };
+        })
         .filter((item) => item.proxies.length > 0);
 
-    // 负载均衡策略（consistent-hashing / round-robin / sticky-sessions）
-    const loadBalanceStrategy = "consistent-hashing";
-
-    // 代理组定义
-    const groups = [
-        // 主入口
-        {
-            name: "🌍 国外代理",
-            type: "select",
-            url: "https://cp.cloudflare.com",
-            icon: "https://raw.githubusercontent.com/Orz-3/mini/master/Color/Static.png",
-            proxies: [
-                "自动选择",
-                "手动选择",
-                "⚖️ 负载均衡",
-                "DIRECT",
-            ],
-        },
-        // 手动选择（全部节点）
-        {
-            name: "手动选择",
-            type: "select",
-            proxies: allProxies,
-            icon: "https://raw.githubusercontent.com/Orz-3/mini/master/Color/Cylink.png",
-        },
-        // 自动选择入口
-        {
-            name: "自动选择",
-            type: "select",
-            icon: "https://raw.githubusercontent.com/Orz-3/mini/master/Color/Urltest.png",
-            proxies: ["ALL - 自动选择"],
-        },
-        {
-            name: "⚖️ 负载均衡",
-            type: "load-balance",
-            url: "https://cp.cloudflare.com",
-            interval: 300,
-            strategy: loadBalanceStrategy,
-            proxies: allProxies,
-            icon: "https://raw.githubusercontent.com/Orz-3/mini/master/Color/Available.png"
-        },
-        {
-            name: "ALL - 自动选择",
+    // 其它：既没有国家关键词、也不属于国内池的节点
+    const otherRe = new RegExp(
+        `^(?!.*(?:${allCountryTerms}|${chinaKeywords}|${excludeTerms})).*$`,
+        "i"
+    );
+    const otherProxies = validProxies.filter((name) => otherRe.test(name));
+    if (otherProxies.length > 0) {
+        autoProxyGroups.push({
+            name: "其它 - 自动选择",
             type: "url-test",
-            url: "https://cp.cloudflare.com",
-            interval: 300,
-            tolerance: 50,
-            proxies: allProxies,
+            url: CONFIG.testUrl,
+            interval: CONFIG.testInterval,
+            tolerance: CONFIG.tolerance,
             hidden: true,
-        },
-        // Telegram 专用
-        {
-            name: "✈️ 电报信息",
-            type: "select",
-            proxies: ["🌍 国外代理", "HK - 自动选择", "JP - 自动选择", "KR - 自动选择", "SG - 自动选择", "US - 自动选择", "UK - 自动选择", "FR - 自动选择", "DE - 自动选择", "TW - 自动选择", "其它 - 自动选择"],
-            // "include-all": true,
-            icon: "https://raw.githubusercontent.com/Orz-3/mini/master/Color/Telegram.png"
-        },
-        // ChatGPT 等 AI 服务
-        {
-            name: "🤖 AIGC",
-            type: "select",
-            proxies: ["US - 自动选择", "🌍 国外代理", "HK - 自动选择", "JP - 自动选择", "KR - 自动选择", "SG - 自动选择", "UK - 自动选择", "FR - 自动选择", "DE - 自动选择", "TW - 自动选择", "其它 - 自动选择"],
-            // "include-all": true,
-            icon: "https://raw.githubusercontent.com/Orz-3/mini/master/Color/OpenAI.png"
-        },
-        // Apple 服务
-        {
-            name: "🍎 苹果服务",
-            type: "select",
-            proxies: ["DIRECT", "🌍 国外代理", "HK - 自动选择", "JP - 自动选择", "KR - 自动选择", "SG - 自动选择", "US - 自动选择", "UK - 自动选择", "FR - 自动选择", "DE - 自动选择", "TW - 自动选择", "其它 - 自动选择"],
-            // "include-all": true,
-            icon: "https://raw.githubusercontent.com/Orz-3/mini/master/Color/Apple.png"
-        },
-        // Microsoft 服务
-        {
-            name: "Ⓜ️ 微软服务",
-            type: "select",
-            proxies: ["DIRECT", "🌍 国外代理", "HK - 自动选择", "JP - 自动选择", "KR - 自动选择", "SG - 自动选择", "US - 自动选择", "UK - 自动选择", "FR - 自动选择", "DE - 自动选择", "TW - 自动选择", "其它 - 自动选择"],
-            // "include-all": true,
-            icon: "https://raw.githubusercontent.com/Orz-3/mini/master/Color/Microsoft.png"
-        },
-    ];
+            proxies: otherProxies,
+        });
+    }
 
-    autoProxyGroups.length &&
-        groups[2].proxies.unshift(...autoProxyGroups.map((item) => item.name));
+    const autoGroupNames = autoProxyGroups.map((item) => item.name);
+    const hasForeign = foreignProxies.length > 0;
+    const hasChina = CONFIG.enableChinaProxy && chinaProxies.length > 0;
+    const icon = (name) => `https://raw.githubusercontent.com/Orz-3/mini/master/Color/${name}.png`;
+
+    const groups = [];
+
+    // 国外主入口
+    const foreignEntry = [];
+    if (hasForeign) {
+        foreignEntry.push("🇺🇳 国外自动选择", "🇺🇳 国外手动选择", "⚖️ 国外负载均衡");
+    }
+    foreignEntry.push("DIRECT");
+    groups.push({
+        name: "🌍 国外代理",
+        type: "select",
+        url: CONFIG.testUrl,
+        icon: icon("Static"),
+        proxies: foreignEntry,
+    });
+
+    // 国内主入口：默认 DIRECT，需要时手动切到国内代理池（无国内代理版不生成）
+    if (CONFIG.enableChinaProxy) {
+        groups.push({
+            name: "🇨🇳 国内代理",
+            type: "select",
+            icon: icon("China"),
+            proxies: hasChina ? ["DIRECT", "🇨🇳 国内手动选择"] : ["DIRECT"],
+        });
+    }
+
+    if (hasForeign) {
+        groups.push({
+            name: "🇺🇳 国外自动选择",
+            type: "select",
+            icon: icon("Urltest"),
+            proxies: ["ALL - 国外自动选择", ...autoGroupNames],
+        });
+        groups.push({
+            name: "🇺🇳 国外手动选择",
+            type: "select",
+            icon: icon("Cylink"),
+            proxies: foreignProxies,
+        });
+    }
+
+    if (hasChina) {
+        groups.push({
+            name: "🇨🇳 国内手动选择",
+            type: "select",
+            icon: icon("China"),
+            proxies: chinaProxies,
+        });
+    }
+
+    if (hasForeign) {
+        groups.push({
+            name: "⚖️ 国外负载均衡",
+            type: "load-balance",
+            url: CONFIG.testUrl,
+            interval: CONFIG.testInterval,
+            strategy: CONFIG.loadBalanceStrategy,
+            proxies: foreignProxies,
+            icon: icon("Available"),
+        });
+        groups.push({
+            name: "ALL - 国外自动选择",
+            type: "url-test",
+            url: CONFIG.testUrl,
+            interval: CONFIG.testInterval,
+            tolerance: CONFIG.tolerance,
+            proxies: foreignProxies,
+            hidden: true,
+        });
+    }
+
     groups.push(...autoProxyGroups);
+
+    // 业务分组：默认走国外入口，可切到任意国家 / 地区自动选择
+    const serviceProxies = [...new Set(["🌍 国外代理", ...autoGroupNames])];
+    groups.push({
+        name: "✈️ 电报信息",
+        type: "select",
+        proxies: serviceProxies,
+        icon: icon("Telegram"),
+    });
+    groups.push({
+        name: "🤖 AIGC",
+        type: "select",
+        proxies: autoGroupNames.includes("US - 自动选择")
+            ? ["US - 自动选择", ...serviceProxies.filter((name) => name !== "US - 自动选择")]
+            : serviceProxies,
+        icon: icon("OpenAI"),
+    });
+    groups.push({
+        name: "🍎 苹果服务",
+        type: "select",
+        proxies: ["DIRECT", ...serviceProxies],
+        icon: icon("Apple"),
+    });
+    groups.push({
+        name: "Ⓜ️ 微软服务",
+        type: "select",
+        proxies: ["DIRECT", ...serviceProxies],
+        icon: icon("Microsoft"),
+    });
+
     params["proxy-groups"] = groups;
+    return groups;
 }
 
 // 分流规则：流量走向
-function overwriteRules(params) {
+// groups 由 overwriteProxyGroups 返回，用来判断哪些策略组真的存在
+function overwriteRules(params, groups) {
+    const groupNames = new Set((groups || []).map((item) => item.name));
+    const proxyNames = new Set((params["proxies"] || []).map((e) => e.name));
+    // 没有美国节点时，流媒体规则回落到国外主入口
+    const streamPolicy = groupNames.has("US - 自动选择") ? "US - 自动选择" : "🌍 国外代理";
+    // 没有国内代理组时，国内流量直接 DIRECT
+    const domesticTarget = groupNames.has("🇨🇳 国内代理") ? "🇨🇳 国内代理" : "DIRECT";
+
     // 去广告规则（最高优先级）
     const adNonipRules = [
         "RULE-SET,reject_non_ip,REJECT",
@@ -619,48 +718,48 @@ function overwriteRules(params) {
         "RULE-SET,reject_non_ip_no_drop,REJECT"
     ];
 
-    // 自定义规则（优先级次于去广告，高于其他规则）
-    const customRules = [
-        // 在此添加自定义规则，优先级次于ad。例子：
-        // "DOMAIN,baidu.com,DIRECT",
-        "DOMAIN-SUFFIX,4399.cn,CSTEAM-VPN",
-        "DOMAIN-SUFFIX,red.unicom,CSTEAM-VPN",
-    ];
+    // 自定义规则写在文件顶部的 CONFIG.customRules 里
+    const customRules = CONFIG.customRules;
 
-    // 非 IP 类规则（按优先级排序）
+    // 校验自定义规则的策略是否存在：订阅变动时不要让整份配置加载失败
+    const validCustomRules = customRules.filter((rule) => {
+        const policy = rule.split(",").pop().trim();
+        if (groupNames.has(policy) || proxyNames.has(policy) || BUILTIN_POLICIES.includes(policy)) {
+            return true;
+        }
+        console.warn(`[proxyrules] 自定义规则引用的策略 "${policy}" 不存在，已跳过：${rule}`);
+        return false;
+    });
+
+    // 非 IP 类规则：先具体服务，再 direct / domestic，最后 cdn / global
     const nonipRules = [
-        // CDN 加速
-        "RULE-SET,cdn_domainset,🌍 国外代理",
-        "RULE-SET,cdn_non_ip,🌍 国外代理",
+        // 局域网
+        "RULE-SET,lan_non_ip,DIRECT",
         // 流媒体
-        "RULE-SET,stream_non_ip,US - 自动选择",
+        `RULE-SET,stream_non_ip,${streamPolicy}`,
         // Telegram
         "RULE-SET,telegram_non_ip,✈️ 电报信息",
         // Apple 服务
         "RULE-SET,apple_cdn,DIRECT",
         "RULE-SET,apple_cn_non_ip,DIRECT",
         "RULE-SET,apple_services,🍎 苹果服务",
-        // 下载
-        "RULE-SET,download_domainset,🌍 国外代理",
-        "RULE-SET,download_non_ip,🌍 国外代理",
         // Microsoft 服务
         "RULE-SET,microsoft_cdn_non_ip,DIRECT",
         "RULE-SET,microsoft_non_ip,Ⓜ️ 微软服务",
         // AIGC
         "RULE-SET,ai_non_ip,🤖 AIGC",
-        // 全球服务
-        "RULE-SET,global_non_ip,🌍 国外代理",
-        // 国内服务
-        "RULE-SET,domestic_non_ip,DIRECT",
+        // 下载
+        "RULE-SET,download_domainset,🌍 国外代理",
+        "RULE-SET,download_non_ip,🌍 国外代理",
+        // 强制直连
         "RULE-SET,direct_non_ip,DIRECT",
-        "RULE-SET,lan_non_ip,DIRECT"
-    ];
-
-    // 合并所有非 IP 规则
-    const allNonipRules = [
-        ...adNonipRules,
-        ...customRules,
-        ...nonipRules
+        // 国内服务
+        `RULE-SET,domestic_non_ip,${domesticTarget}`,
+        // CDN 加速：放在具体服务之后，避免抢走 AIGC / Apple / Microsoft / Telegram 的 CDN 域名
+        "RULE-SET,cdn_domainset,🌍 国外代理",
+        "RULE-SET,cdn_non_ip,🌍 国外代理",
+        // 全球服务
+        "RULE-SET,global_non_ip,🌍 国外代理"
     ];
 
     // IP 类规则（按优先级排序）
@@ -670,20 +769,22 @@ function overwriteRules(params) {
         // Telegram
         "RULE-SET,telegram_ip,✈️ 电报信息",
         // 流媒体
-        "RULE-SET,stream_ip,US - 自动选择",
+        `RULE-SET,stream_ip,${streamPolicy}`,
         // 局域网
         "RULE-SET,lan_ip,DIRECT",
-        // 国内 IP
-        "RULE-SET,domestic_ip,DIRECT",
+        // 国内 IP：有国内代理组时走该组，否则 DIRECT
+        `RULE-SET,domestic_ip,${domesticTarget}`,
         // 中国 IP
-        "RULE-SET,china_ip,DIRECT",
+        `RULE-SET,china_ip,${domesticTarget}`,
         // 兜底规则
         "MATCH,🌍 国外代理"
     ];
 
     // 合并所有规则
     const rules = [
-        ...allNonipRules,
+        ...adNonipRules,
+        ...validCustomRules,
+        ...nonipRules,
         ...ipRules
     ];
 
@@ -747,7 +848,7 @@ function overwriteRules(params) {
         },
         cdn_non_ip: {
             type: "http",
-            behavior: "domain",
+            behavior: "classical",
             url: "https://ruleset.skk.moe/Clash/non_ip/cdn.txt",
             path: "./rule_set/sukkaw_ruleset/cdn_non_ip.txt",
             interval: 43200,
@@ -861,7 +962,7 @@ function overwriteRules(params) {
         },
         download_non_ip: {
             type: "http",
-            behavior: "domain",
+            behavior: "classical",
             url: "https://ruleset.skk.moe/Clash/non_ip/download.txt",
             path: "./rule_set/sukkaw_ruleset/download_non_ip.txt",
             interval: 43200,
@@ -936,10 +1037,4 @@ function overwriteRules(params) {
 
     params["rule-providers"] = ruleProviders;
     params["rules"] = rules;
-}
-
-// 按正则匹配代理节点（自动选择用）
-function getProxiesByRegex(params, regex) {
-    const matchedProxies = params.proxies.filter((e) => regex.test(e.name)).map((e) => e.name);
-    return matchedProxies.length > 0 ? matchedProxies : ["COMPATIBLE"];
 }
