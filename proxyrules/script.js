@@ -76,6 +76,10 @@ var CONFIG = {
         appleCn: "https://ruleset.skk.moe/Clash/non_ip/apple_cn.txt",
         // 微软 CDN（系统更新 / Office 下载）
         microsoftCdn: "https://ruleset.skk.moe/Clash/non_ip/microsoft_cdn.txt",
+        // 苹果服务（iCloud / App Store / Apple News 等）
+        appleServices: "https://ruleset.skk.moe/Clash/non_ip/apple_services.txt",
+        // 微软服务（Outlook / Office / Bing / Azure 等）
+        microsoftServices: "https://ruleset.skk.moe/Clash/non_ip/microsoft.txt",
         // AI 服务
         ai: "https://ruleset.skk.moe/Clash/non_ip/ai.txt",
         // 电报（域名 + IP）
@@ -342,6 +346,16 @@ function buildGroups(params) {
         type: "select",
         proxies: serviceProxies
     });
+    groups.push({
+        name: "🍎 苹果服务",
+        type: "select",
+        proxies: ["DIRECT"].concat(serviceProxies)
+    });
+    groups.push({
+        name: "Ⓜ️ 微软服务",
+        type: "select",
+        proxies: ["DIRECT"].concat(serviceProxies)
+    });
 
     params["proxy-groups"] = groups;
     return groups;
@@ -401,7 +415,9 @@ function buildRules(params, groups) {
     // 苹果 / 微软 CDN 直连，避免走代理拖慢下载
     rules.push("RULE-SET,apple-cdn,DIRECT");
     rules.push("RULE-SET,apple-cn,DIRECT");
+    rules.push("RULE-SET,apple-services,🍎 苹果服务");
     rules.push("RULE-SET,microsoft-cdn,DIRECT");
+    rules.push("RULE-SET,microsoft-services,Ⓜ️ 微软服务");
 
     // AI / 电报 / 流媒体
     rules.push("RULE-SET,ai,🤖 AIGC");
@@ -442,6 +458,8 @@ function buildRules(params, groups) {
         "apple-cdn": createProvider(CONFIG.rulesets.appleCdn, "domain", "./rule_set/apple_cdn.txt"),
         "apple-cn": createProvider(CONFIG.rulesets.appleCn, "classical", "./rule_set/apple_cn.txt"),
         "microsoft-cdn": createProvider(CONFIG.rulesets.microsoftCdn, "classical", "./rule_set/microsoft_cdn.txt"),
+        "apple-services": createProvider(CONFIG.rulesets.appleServices, "classical", "./rule_set/apple_services.txt"),
+        "microsoft-services": createProvider(CONFIG.rulesets.microsoftServices, "classical", "./rule_set/microsoft.txt"),
         ai: createProvider(CONFIG.rulesets.ai, "classical", "./rule_set/ai.txt"),
         "telegram-domain": createProvider(CONFIG.rulesets.telegramDomain, "classical", "./rule_set/telegram.txt"),
         "telegram-ip": createProvider(CONFIG.rulesets.telegramIp, "classical", "./rule_set/telegram_ip.txt"),

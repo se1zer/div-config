@@ -31,6 +31,8 @@ Clash Party（原名 Mihomo Party）覆写脚本。国外节点按国家分组�
 | 🤖 AIGC | select | 默认 `US - 自动选择`，可切到任意地区组 |
 | 📺 流媒体 | select | 默认 `US - 自动选择`，可切到任意地区组 |
 | ✈️ 电报信息 | select | 默认「🌍 国外代理」，可切到任意地区组 |
+| 🍎 苹果服务 | select | 默认 DIRECT，登录美区 Apple ID 时切到美国节点 |
+| Ⓜ️ 微软服务 | select | 默认 DIRECT，可切到国外代理或任意地区组 |
 
 ## 规则
 
@@ -45,7 +47,9 @@ RULE-SET,lan,DIRECT                      局域网域名（路由器 / NAS / 打
 RULE-SET,domestic,🇨🇳 国内代理             国内域名
 RULE-SET,apple-cdn,DIRECT                苹果 CDN
 RULE-SET,apple-cn,DIRECT                 苹果国内域名
+RULE-SET,apple-services,🍎 苹果服务       苹果服务（iCloud / App Store / News）
 RULE-SET,microsoft-cdn,DIRECT            微软 CDN（系统更新 / Office）
+RULE-SET,microsoft-services,Ⓜ️ 微软服务   微软服务（Outlook / Office / Bing / Azure）
 RULE-SET,ai,🤖 AIGC                      AI
 RULE-SET,telegram-domain,✈️ 电报信息      电报域名
 RULE-SET,stream,📺 流媒体                  流媒体域名
@@ -65,7 +69,7 @@ MATCH,🌍 国外代理                           兜底
 
 `lan-ip` 规则集（`ip/lan.txt`，12 条）负责私网 / 回环 / 组播直连：`127.0.0.1` 和 `192.168.x.x` 这类地址走代理一定失败。
 
-## 规则集（19 个，从 ruleset.skk.moe 拉取，12 小时更新）
+## 规则集（21 个，从 ruleset.skk.moe 拉取，12 小时更新）
 
 | 规则集 | behavior | 条数 | 作用 |
 |---|---|---|---|
@@ -79,7 +83,9 @@ MATCH,🌍 国外代理                           兜底
 | `non_ip/domestic.txt` | classical | 870 | 国内域名 |
 | `domainset/apple_cdn.txt` | domain | 160 | 苹果 CDN |
 | `non_ip/apple_cn.txt` | classical | 10 | 苹果国内域名 |
+| `non_ip/apple_services.txt` | classical | 26 | 苹果服务 |
 | `non_ip/microsoft_cdn.txt` | classical | 51 | 微软 CDN |
+| `non_ip/microsoft.txt` | classical | 84 | 微软服务 |
 | `non_ip/direct.txt` | classical | 219 | 强制直连 |
 | `domainset/download.txt` | domain | 1,969 | 大文件下载 |
 | `non_ip/download.txt` | classical | 10 | 大文件下载（通配） |
@@ -102,7 +108,7 @@ MATCH,🌍 国外代理                           兜底
 | `chinaKeywords` | 省份 + 运营商 + 中国 | 节点名命中则归为国内节点 |
 | `infoNodeKeywords` | 剩余 / 到期 / 套餐… | 机场公告节点，命中则忽略 |
 | `regions` | HK / MO / TW / SG / JP / KR / US / UK / FR / DE | 国家关键词。英文缩写用 `wordCode()` 包一层，避免 `Russia` 命中 `US` |
-| `rulesets` | skk 的 19 个规则集 | 广告 / 局域网 / 国内 / 苹果微软 CDN / 强制直连 / 下载 / AI / 电报 / 流媒体，见下面「规则集」表格 |
+| `rulesets` | skk 的 21 个规则集 | 广告 / 局域网 / 国内 / 苹果微软 CDN / 强制直连 / 下载 / AI / 电报 / 流媒体，见下面「规则集」表格 |
 
 ## 几点说明
 
