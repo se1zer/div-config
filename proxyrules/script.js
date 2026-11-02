@@ -100,7 +100,8 @@ var CONFIG = {
 // 内核内置的策略名
 var BUILTIN_POLICIES = ["DIRECT", "REJECT", "REJECT-DROP", "PASS", "COMPATIBLE", "GLOBAL"];
 
-// 国家 / 地区的中文名（用于分组显示；图标用 Orz-3 的国旗图片，不依赖 emoji 字体）
+// 国家 / 地区名。国家组是隐藏的（只在「国外自动选择」下拉里出现），
+// 而下拉项只渲染组名文字、不渲染 icon，所以组名要能直接看懂
 var REGION_LABELS = {
     HK: "香港",
     MO: "澳门",
@@ -237,7 +238,6 @@ function buildGroups(params) {
         if (proxies.length > 0) {
             regionGroups.push({
                 name: REGION_LABELS[code] + " - 自动选择",
-                icon: icon(code),
                 type: "url-test",
                 url: CONFIG.testUrl,
                 interval: CONFIG.testInterval,
@@ -260,7 +260,6 @@ function buildGroups(params) {
     if (otherNames.length > 0) {
         regionGroups.push({
             name: "其它 - 自动选择",
-            icon: icon("Global"),
             type: "url-test",
             url: CONFIG.testUrl,
             interval: CONFIG.testInterval,
@@ -315,7 +314,6 @@ function buildGroups(params) {
         });
         groups.push({
             name: "ALL - 国外自动选择",
-            icon: icon("Urltest"),
             type: "url-test",
             url: CONFIG.testUrl,
             interval: CONFIG.testInterval,
@@ -388,7 +386,6 @@ function buildGroups(params) {
     if (hasForeign) {
         groups.push({
             name: "国外负载均衡",
-            icon: icon("Available"),
             type: "load-balance",
             url: CONFIG.testUrl,
             interval: CONFIG.testInterval,

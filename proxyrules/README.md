@@ -1,6 +1,12 @@
 # Proxyrules
 
-Clash Party（原名 Mihomo Party）覆写脚本。所有分组图标统一使用 [Orz-3/mini](https://github.com/Orz-3/mini) 的 Color 图标集（含国家 / 地区国旗），通过 `cdn.jsdelivr.net` 加载。图标由客户端前端直接请求、不走代理，所以不能用 `raw.githubusercontent.com`（国内经常连不上，会显示空白）。国外节点按国家分组，国内节点单独一组，AI / 电报单独分流。
+Clash Party（原名 Mihomo Party）覆写脚本。显示的分组图标使用 [Orz-3/mini](https://github.com/Orz-3/mini) 的 Color 图标集，通过 `cdn.jsdelivr.net` 加载（图标由客户端前端直接请求、不走代理，`raw.githubusercontent.com` 国内经常连不上）。
+
+> **隐藏组不设 icon**：`hidden: true` 的组（国家组、ALL、其它、负载均衡）不会生成卡片，下拉选项里客户端也只渲染组名、不渲染图标，设了也看不见。它们的标识只能靠组名文字。
+>
+> 组名统一用纯中文，不使用 emoji（避免部分系统/字体下不显示）。
+
+国外节点按国家分组，国内节点单独一组，AI / 电报单独分流。
 
 ## 它做什么
 
@@ -25,7 +31,7 @@ Clash Party（原名 Mihomo Party）覆写脚本。所有分组图标统一使�
 | 国外手动选择 | select | 所有国外节点 |
 | ALL - 国外自动选择 | url-test（隐藏） | 所有国外节点测速 |
 | 国内手动选择 | select | 国内节点（没有就不生成） |
-| 香港 / 澳门 / 台湾 / 新加坡 / 日本 / 韩国 / 美国 / 英国 / 法国 / 德国 - 自动选择 | url-test（隐藏） | 按节点名归类，没有对应节点就不生成。组名中文，图标用 Orz-3 的国旗图片 |
+| 香港 / 澳门 / 台湾 / 新加坡 / 日本 / 韩国 / 美国 / 英国 / 法国 / 德国 - 自动选择 | url-test（隐藏） | 按节点名归类，没有对应节点就不生成 |
 | 其它 - 自动选择 | url-test（隐藏） | 没有国家关键词、也不属于国内的节点 |
 | AIGC | select | 默认 `美国 - 自动选择`，可切到任意地区组 |
 | 流媒体 | select | 默认 `美国 - 自动选择`，可切到任意地区组 |
