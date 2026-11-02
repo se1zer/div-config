@@ -107,6 +107,11 @@ function wordCode(code) {
     return "(?:^|[^A-Za-z])" + code + "(?:[^A-Za-z]|$)";
 }
 
+// 组图标：统一使用 Orz-3/mini 的 Color 图标集
+function icon(name) {
+    return "https://raw.githubusercontent.com/Orz-3/mini/master/Color/" + name + ".png";
+}
+
 // 生成一个规则集配置（只在 buildRules 里用到）
 //   url      规则集地址
 //   behavior 规则集格式：domainset 目录用 domain，non_ip / ip 目录用 classical
@@ -119,7 +124,7 @@ function createProvider(url, behavior, path) {
         path: path,
         interval: 43200,
         format: "text",
-        proxy: "🌍 国外代理"
+        proxy: "国外代理"
     };
 }
 
@@ -216,6 +221,7 @@ function buildGroups(params) {
         if (proxies.length > 0) {
             regionGroups.push({
                 name: code + " - 自动选择",
+                icon: icon(code),
                 type: "url-test",
                 url: CONFIG.testUrl,
                 interval: CONFIG.testInterval,
@@ -238,6 +244,7 @@ function buildGroups(params) {
     if (otherNames.length > 0) {
         regionGroups.push({
             name: "其它 - 自动选择",
+            icon: icon("Global"),
             type: "url-test",
             url: CONFIG.testUrl,
             interval: CONFIG.testInterval,
@@ -258,36 +265,41 @@ function buildGroups(params) {
     // 国外入口：自动选最快 / 手动挑节点 / 负载均衡 / 直连
     const foreignEntry = [];
     if (hasForeign) {
-        foreignEntry.push("🇺🇳 国外自动选择", "🇺🇳 国外手动选择", "⚖️ 国外负载均衡");
+        foreignEntry.push("国外自动选择", "国外手动选择", "国外负载均衡");
     }
     foreignEntry.push("DIRECT");
     groups.push({
-        name: "🌍 国外代理",
+        name: "国外代理",
+        icon: icon("Static"),
         type: "select",
         proxies: foreignEntry
     });
 
     // 国内入口：默认直连，需要时切到国内节点
     groups.push({
-        name: "🇨🇳 国内代理",
+        name: "国内代理",
+        icon: icon("China"),
         type: "select",
-        proxies: hasChina ? ["DIRECT", "🇨🇳 国内手动选择"] : ["DIRECT"]
+        proxies: hasChina ? ["DIRECT", "国内手动选择"] : ["DIRECT"]
     });
 
     // 国外自动选择：ALL 组 + 各国组
     if (hasForeign) {
         groups.push({
-            name: "🇺🇳 国外自动选择",
+            name: "国外自动选择",
+            icon: icon("Urltest"),
             type: "select",
             proxies: ["ALL - 国外自动选择"].concat(regionGroupNames)
         });
         groups.push({
-            name: "🇺🇳 国外手动选择",
+            name: "国外手动选择",
+            icon: icon("Cylink"),
             type: "select",
             proxies: foreignNames
         });
         groups.push({
             name: "ALL - 国外自动选择",
+            icon: icon("Urltest"),
             type: "url-test",
             url: CONFIG.testUrl,
             interval: CONFIG.testInterval,
@@ -295,21 +307,13 @@ function buildGroups(params) {
             hidden: true,
             proxies: foreignNames
         });
-        // 同一个域名始终走同一个节点，避免流媒体 / 登录状态来回跳
-        groups.push({
-            name: "⚖️ 国外负载均衡",
-            type: "load-balance",
-            url: CONFIG.testUrl,
-            interval: CONFIG.testInterval,
-            strategy: "consistent-hashing",
-            proxies: foreignNames
-        });
     }
 
     // 国内手动选择
     if (hasChina) {
         groups.push({
-            name: "🇨🇳 国内手动选择",
+            name: "国内手动选择",
+            icon: icon("China"),
             type: "select",
             proxies: chinaNames
         });
@@ -319,7 +323,7 @@ function buildGroups(params) {
     groups.push.apply(groups, regionGroups);
 
     // 业务分组：默认走国外入口，可切到任意国家组
-    const serviceProxies = ["🌍 国外代理"].concat(regionGroupNames);
+    const serviceProxies = ["国外代理"].concat(regionGroupNames);
     // 有美国节点时，AI / 流媒体默认走美国
     const preferUs = function (list) {
         return regionGroupNames.indexOf("US - 自动选择") >= 0
@@ -332,30 +336,50 @@ function buildGroups(params) {
     };
 
     groups.push({
-        name: "🤖 AIGC",
+        name: "AIGC",
+        icon: icon("OpenAI"),
         type: "select",
         proxies: preferUs(serviceProxies)
     });
     groups.push({
-        name: "📺 流媒体",
+        name: "流媒体",
+        icon: icon("Streaming"),
         type: "select",
         proxies: preferUs(serviceProxies)
     });
     groups.push({
-        name: "✈️ 电报信息",
+        name: "电报信息",
+        icon: icon("Telegram"),
         type: "select",
         proxies: serviceProxies
     });
     groups.push({
-        name: "🍎 苹果服务",
+        name: "苹果服务",
+        icon: icon("Apple"),
         type: "select",
         proxies: ["DIRECT"].concat(serviceProxies)
     });
     groups.push({
-        name: "Ⓜ️ 微软服务",
+        name: "微软服务",
+        icon: icon("Microsoft"),
         type: "select",
         proxies: ["DIRECT"].concat(serviceProxies)
     });
+
+    // 同一个域名始终走同一个节点，避免流媒体 / 登录状态来回跳
+    // hidden：不出现在分组列表里，但作为「国外代理」的选项可选
+    if (hasForeign) {
+        groups.push({
+            name: "国外负载均衡",
+            icon: icon("Available"),
+            type: "load-balance",
+            url: CONFIG.testUrl,
+            interval: CONFIG.testInterval,
+            strategy: "consistent-hashing",
+            hidden: true,
+            proxies: foreignNames
+        });
+    }
 
     params["proxy-groups"] = groups;
     return groups;
@@ -410,24 +434,24 @@ function buildRules(params, groups) {
 
     // 局域网 / 国内域名
     rules.push("RULE-SET,lan,DIRECT");
-    rules.push("RULE-SET,domestic,🇨🇳 国内代理");
+    rules.push("RULE-SET,domestic,国内代理");
 
     // 苹果 / 微软 CDN 直连，避免走代理拖慢下载
     rules.push("RULE-SET,apple-cdn,DIRECT");
     rules.push("RULE-SET,apple-cn,DIRECT");
-    rules.push("RULE-SET,apple-services,🍎 苹果服务");
+    rules.push("RULE-SET,apple-services,苹果服务");
     rules.push("RULE-SET,microsoft-cdn,DIRECT");
-    rules.push("RULE-SET,microsoft-services,Ⓜ️ 微软服务");
+    rules.push("RULE-SET,microsoft-services,微软服务");
 
     // AI / 电报 / 流媒体
-    rules.push("RULE-SET,ai,🤖 AIGC");
-    rules.push("RULE-SET,telegram-domain,✈️ 电报信息");
-    rules.push("RULE-SET,stream,📺 流媒体");
+    rules.push("RULE-SET,ai,AIGC");
+    rules.push("RULE-SET,telegram-domain,电报信息");
+    rules.push("RULE-SET,stream,流媒体");
 
     // 强制直连 / 下载
     rules.push("RULE-SET,direct,DIRECT");
-    rules.push("RULE-SET,download-domainset,🌍 国外代理");
-    rules.push("RULE-SET,download,🌍 国外代理");
+    rules.push("RULE-SET,download-domainset,国外代理");
+    rules.push("RULE-SET,download,国外代理");
 
     // 私网 / 回环 / 组播直连（127.0.0.1、192.168.x.x 等走代理必然失败）
     rules.push("RULE-SET,lan-ip,DIRECT,no-resolve");
@@ -438,12 +462,12 @@ function buildRules(params, groups) {
     }
 
     // 电报 / 流媒体的 IP 直连部分
-    rules.push("RULE-SET,telegram-ip,✈️ 电报信息,no-resolve");
-    rules.push("RULE-SET,stream-ip,📺 流媒体,no-resolve");
+    rules.push("RULE-SET,telegram-ip,电报信息,no-resolve");
+    rules.push("RULE-SET,stream-ip,流媒体,no-resolve");
 
     // 国内 IP / 兜底
-    rules.push("GEOIP,CN,🇨🇳 国内代理");
-    rules.push("MATCH,🌍 国外代理");
+    rules.push("GEOIP,CN,国内代理");
+    rules.push("MATCH,国外代理");
 
     // 兜底过滤：目标不存在的规则（理论上不会有）在这里再兜一层
     params.rules = rules.filter(function (rule) {

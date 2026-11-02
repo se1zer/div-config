@@ -1,6 +1,6 @@
 # Proxyrules
 
-Clash Party（原名 Mihomo Party）覆写脚本。国外节点按国家分组，国内节点单独一组，AI / 电报单独分流。
+Clash Party（原名 Mihomo Party）覆写脚本。所有分组图标统一使用 [Orz-3/mini](https://github.com/Orz-3/mini) 的 Color 图标集。国外节点按国家分组，国内节点单独一组，AI / 电报单独分流。
 
 ## 它做什么
 
@@ -19,50 +19,50 @@ Clash Party（原名 Mihomo Party）覆写脚本。国外节点按国家分组�
 
 | 组 | 类型 | 说明 |
 |---|---|---|
-| 🌍 国外代理 | select | 国外流量主入口：国外自动选择 / 国外手动选择 / 国外负载均衡 / DIRECT |
-| 🇨🇳 国内代理 | select | 默认 DIRECT，可切到国内手动选择 |
-| 🇺🇳 国外自动选择 | select | `ALL - 国外自动选择` + 各国自动选择组 |
-| 🇺🇳 国外手动选择 | select | 所有国外节点 |
+| 国外代理 | select | 国外流量主入口：国外自动选择 / 国外手动选择 / 国外负载均衡 / DIRECT |
+| 国内代理 | select | 默认 DIRECT，可切到国内手动选择 |
+| 国外自动选择 | select | `ALL - 国外自动选择` + 各国自动选择组 |
+| 国外手动选择 | select | 所有国外节点 |
 | ALL - 国外自动选择 | url-test（隐藏） | 所有国外节点测速 |
-| ⚖️ 国外负载均衡 | load-balance | 所有国外节点，按域名一致性哈希分配（同一域名固定走同一节点） |
-| 🇨🇳 国内手动选择 | select | 国内节点（没有就不生成） |
+| 国内手动选择 | select | 国内节点（没有就不生成） |
 | HK / MO / TW / SG / JP / KR / US / UK / FR / DE - 自动选择 | url-test（隐藏） | 按节点名归类，没有对应节点就不生成 |
 | 其它 - 自动选择 | url-test（隐藏） | 没有国家关键词、也不属于国内的节点 |
-| 🤖 AIGC | select | 默认 `US - 自动选择`，可切到任意地区组 |
-| 📺 流媒体 | select | 默认 `US - 自动选择`，可切到任意地区组 |
-| ✈️ 电报信息 | select | 默认「🌍 国外代理」，可切到任意地区组 |
-| 🍎 苹果服务 | select | 默认 DIRECT，登录美区 Apple ID 时切到美国节点 |
-| Ⓜ️ 微软服务 | select | 默认 DIRECT，可切到国外代理或任意地区组 |
+| AIGC | select | 默认 `US - 自动选择`，可切到任意地区组 |
+| 流媒体 | select | 默认 `US - 自动选择`，可切到任意地区组 |
+| 电报信息 | select | 默认「国外代理」，可切到任意地区组 |
+| 苹果服务 | select | 默认 DIRECT，登录美区 Apple ID 时切到美国节点 |
+| 微软服务 | select | 默认 DIRECT，可切到国外代理或任意地区组 |
+| 国外负载均衡 | load-balance（隐藏） | 所有国外节点，按域名一致性哈希分配。不出现在分组列表，但作为「国外代理」的选项可选 |
 
 ## 规则
 
 ```yaml
 # 域名类（在前，域名请求命中就结束，不用先做 IP 解析）
-RULE-SET,ad,REJECT                       去广告 14.5 万条域名
+RULE-SET,ad,REJECT                    去广告 14.5 万条域名
 # CONFIG.customRules 里的自定义规则插在这里
-RULE-SET,reject-non-ip,REJECT            广告：domainset 覆盖不到的 keyword / wildcard / IP
-RULE-SET,reject-drop,REJECT-DROP         广告：QUIC 类静默丢弃
-RULE-SET,reject-no-drop,REJECT            广告：PCDN 吸血域名（p2p.qq.com、pcdn.yximgs.com 等）
-RULE-SET,lan,DIRECT                      局域网域名（路由器 / NAS / 打印机）
-RULE-SET,domestic,🇨🇳 国内代理             国内域名
-RULE-SET,apple-cdn,DIRECT                苹果 CDN
-RULE-SET,apple-cn,DIRECT                 苹果国内域名
-RULE-SET,apple-services,🍎 苹果服务       苹果服务（iCloud / App Store / News）
-RULE-SET,microsoft-cdn,DIRECT            微软 CDN（系统更新 / Office）
-RULE-SET,microsoft-services,Ⓜ️ 微软服务   微软服务（Outlook / Office / Bing / Azure）
-RULE-SET,ai,🤖 AIGC                      AI
-RULE-SET,telegram-domain,✈️ 电报信息      电报域名
-RULE-SET,stream,📺 流媒体                  流媒体域名
-RULE-SET,direct,DIRECT                   强制直连（银行 / 政务 / 内网）
-RULE-SET,download-domainset,🌍 国外代理    大文件下载
-RULE-SET,download,🌍 国外代理              大文件下载（通配）
+RULE-SET,reject-non-ip,REJECT         广告：domainset 覆盖不到的 keyword / wildcard / IP
+RULE-SET,reject-drop,REJECT-DROP      广告：QUIC 类静默丢弃
+RULE-SET,reject-no-drop,REJECT        广告：PCDN 吸血域名（p2p.qq.com、pcdn.yximgs.com 等）
+RULE-SET,lan,DIRECT                   局域网域名（路由器 / NAS / 打印机）
+RULE-SET,domestic,国内代理            国内域名
+RULE-SET,apple-cdn,DIRECT             苹果 CDN
+RULE-SET,apple-cn,DIRECT              苹果国内域名
+RULE-SET,apple-services,苹果服务      苹果服务（iCloud / App Store / News）
+RULE-SET,microsoft-cdn,DIRECT         微软 CDN（系统更新 / Office）
+RULE-SET,microsoft-services,微软服务  微软服务（Outlook / Office / Bing / Azure）
+RULE-SET,ai,AIGC                      AI
+RULE-SET,telegram-domain,电报信息     电报域名
+RULE-SET,stream,流媒体                流媒体域名
+RULE-SET,direct,DIRECT                强制直连（银行 / 政务 / 内网）
+RULE-SET,download-domainset,国外代理  大文件下载
+RULE-SET,download,国外代理            大文件下载（通配）
 # IP 类（在后）
-RULE-SET,lan-ip,DIRECT,no-resolve        私网 / 回环（127.0.0.1、192.168.x.x 等）
-RULE-SET,reject-ip,REJECT                广告：IP 直连
-RULE-SET,telegram-ip,✈️ 电报信息,no-resolve 电报 IP
-RULE-SET,stream-ip,📺 流媒体,no-resolve     流媒体 IP
-GEOIP,CN,🇨🇳 国内代理                      国内 IP
-MATCH,🌍 国外代理                           兜底
+RULE-SET,lan-ip,DIRECT,no-resolve     私网 / 回环（127.0.0.1、192.168.x.x 等）
+RULE-SET,reject-ip,REJECT             广告：IP 直连
+RULE-SET,telegram-ip,电报信息,no-resolve 电报 IP
+RULE-SET,stream-ip,流媒体,no-resolve  流媒体 IP
+GEOIP,CN,国内代理                     国内 IP
+MATCH,国外代理                        兜底
 ```
 
 `enableAdBlock: false` 时，`ad` / `reject-non-ip` / `reject-drop` / `reject-no-drop` / `reject-ip` 五个规则集和对应 5 条规则都不生成。
@@ -119,7 +119,7 @@ MATCH,🌍 国外代理                           兜底
   ```
 - **不写 `profile` / `unified-delay` / `find-process-mode`**。它们的默认值分别是 `store-selected: true`、`false`、`strict`，已经符合预期，显式写是冗余。
 - **手动选择的节点会被记住**（默认 `store-selected: true`），重载配置不会丢。
-- **流媒体只匹配域名**（skk 的 `non_ip/stream.txt`）。流媒体走 IP 直连的那部分流量会落到 `MATCH` → 「🌍 国外代理」，此时在「📺 流媒体」里选的节点对它不生效。需要覆盖的话再加一个 `ip/stream.txt` 规则集。
+- **流媒体只匹配域名**（skk 的 `non_ip/stream.txt`）。流媒体走 IP 直连的那部分流量会落到 `MATCH` → 「国外代理」，此时在「流媒体」里选的节点对它不生效。需要覆盖的话再加一个 `ip/stream.txt` 规则集。
 - **规则集格式要对上**：`domainset/` 下是纯域名列表，`behavior` 必须写 `domain`；`non_ip/` 和 `ip/` 下是带前缀的规则，`behavior` 写 `classical`。写错规则集加载不出来。
 - **第一次启动会慢一点**：规则集和 geo 数据需要下载一次（广告规则集约 3.3MB、geoip 约 8MB、ASN 数据约 8.6MB），之后正常。
 - `ip/reject.txt` 里有 15 条 `IP-ASN` 规则，需要 `ASN.mmdb`。Clash Party 会自己下载；如果下载失败，只有广告 IP 那一条规则集受影响，不影响其它规则。
