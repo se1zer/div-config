@@ -122,8 +122,10 @@ function wordCode(code) {
 }
 
 // 组图标：统一使用 Orz-3/mini 的 Color 图标集
+// 用 jsdelivr 而不是 raw.githubusercontent.com：图标由客户端前端直接加载、不走代理，
+// raw.githubusercontent.com 在国内经常连不上，会显示成空白图标
 function icon(name) {
-    return "https://raw.githubusercontent.com/Orz-3/mini/master/Color/" + name + ".png";
+    return "https://cdn.jsdelivr.net/gh/Orz-3/mini@master/Color/" + name + ".png";
 }
 
 // 生成一个规则集配置（只在 buildRules 里用到）

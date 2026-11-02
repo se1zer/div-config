@@ -1,6 +1,6 @@
 # Proxyrules
 
-Clash Party（原名 Mihomo Party）覆写脚本。所有分组图标统一使用 [Orz-3/mini](https://github.com/Orz-3/mini) 的 Color 图标集（含国家 / 地区国旗）。用图片而不是 emoji，避免 Windows 上国旗 emoji 不显示。国外节点按国家分组，国内节点单独一组，AI / 电报单独分流。
+Clash Party（原名 Mihomo Party）覆写脚本。所有分组图标统一使用 [Orz-3/mini](https://github.com/Orz-3/mini) 的 Color 图标集（含国家 / 地区国旗），通过 `cdn.jsdelivr.net` 加载。图标由客户端前端直接请求、不走代理，所以不能用 `raw.githubusercontent.com`（国内经常连不上，会显示空白）。国外节点按国家分组，国内节点单独一组，AI / 电报单独分流。
 
 ## 它做什么
 
