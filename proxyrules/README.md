@@ -1,6 +1,6 @@
 # Proxyrules
 
-Clash Party（原名 Mihomo Party）覆写脚本。所有分组图标统一使用 [Orz-3/mini](https://github.com/Orz-3/mini) 的 Color 图标集。国外节点按国家分组，国内节点单独一组，AI / 电报单独分流。
+Clash Party（原名 Mihomo Party）覆写脚本。所有分组图标统一使用 [Orz-3/mini](https://github.com/Orz-3/mini) 的 Color 图标集（含国家 / 地区国旗）。用图片而不是 emoji，避免 Windows 上国旗 emoji 不显示。国外节点按国家分组，国内节点单独一组，AI / 电报单独分流。
 
 ## 它做什么
 
@@ -21,14 +21,14 @@ Clash Party（原名 Mihomo Party）覆写脚本。所有分组图标统一使�
 |---|---|---|
 | 国外代理 | select | 国外流量主入口：国外自动选择 / 国外手动选择 / 国外负载均衡 / DIRECT |
 | 国内代理 | select | 默认 DIRECT，可切到国内手动选择 |
-| 国外自动选择 | select | `ALL - 国外自动选择` + 各国自动选择组 |
+| 国外自动选择 | select | `ALL - 国外自动选择` + 各国自动选择组（香港 / 日本 / 美国 …） |
 | 国外手动选择 | select | 所有国外节点 |
 | ALL - 国外自动选择 | url-test（隐藏） | 所有国外节点测速 |
 | 国内手动选择 | select | 国内节点（没有就不生成） |
-| HK / MO / TW / SG / JP / KR / US / UK / FR / DE - 自动选择 | url-test（隐藏） | 按节点名归类，没有对应节点就不生成 |
+| 香港 / 澳门 / 台湾 / 新加坡 / 日本 / 韩国 / 美国 / 英国 / 法国 / 德国 - 自动选择 | url-test（隐藏） | 按节点名归类，没有对应节点就不生成。组名中文，图标用 Orz-3 的国旗图片 |
 | 其它 - 自动选择 | url-test（隐藏） | 没有国家关键词、也不属于国内的节点 |
-| AIGC | select | 默认 `US - 自动选择`，可切到任意地区组 |
-| 流媒体 | select | 默认 `US - 自动选择`，可切到任意地区组 |
+| AIGC | select | 默认 `美国 - 自动选择`，可切到任意地区组 |
+| 流媒体 | select | 默认 `美国 - 自动选择`，可切到任意地区组 |
 | 电报信息 | select | 默认「国外代理」，可切到任意地区组 |
 | 苹果服务 | select | 默认 DIRECT，登录美区 Apple ID 时切到美国节点 |
 | 微软服务 | select | 默认 DIRECT，可切到国外代理或任意地区组 |

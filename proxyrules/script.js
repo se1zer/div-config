@@ -100,6 +100,20 @@ var CONFIG = {
 // 内核内置的策略名
 var BUILTIN_POLICIES = ["DIRECT", "REJECT", "REJECT-DROP", "PASS", "COMPATIBLE", "GLOBAL"];
 
+// 国家 / 地区的中文名（用于分组显示；图标用 Orz-3 的国旗图片，不依赖 emoji 字体）
+var REGION_LABELS = {
+    HK: "香港",
+    MO: "澳门",
+    TW: "台湾",
+    SG: "新加坡",
+    JP: "日本",
+    KR: "韩国",
+    US: "美国",
+    UK: "英国",
+    FR: "法国",
+    DE: "德国"
+};
+
 // ---------------- 工具函数 ----------------
 
 // 英文缩写前后不能紧跟其它字母，否则 Russia 里的 us 会被当成美国
@@ -220,7 +234,7 @@ function buildGroups(params) {
         });
         if (proxies.length > 0) {
             regionGroups.push({
-                name: code + " - 自动选择",
+                name: REGION_LABELS[code] + " - 自动选择",
                 icon: icon(code),
                 type: "url-test",
                 url: CONFIG.testUrl,
@@ -326,10 +340,11 @@ function buildGroups(params) {
     const serviceProxies = ["国外代理"].concat(regionGroupNames);
     // 有美国节点时，AI / 流媒体默认走美国
     const preferUs = function (list) {
-        return regionGroupNames.indexOf("US - 自动选择") >= 0
-            ? ["US - 自动选择"].concat(
+        const usGroup = REGION_LABELS.US + " - 自动选择";
+        return regionGroupNames.indexOf(usGroup) >= 0
+            ? [usGroup].concat(
                   list.filter(function (name) {
-                      return name !== "US - 自动选择";
+                      return name !== usGroup;
                   })
               )
             : list;
